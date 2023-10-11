@@ -1,0 +1,40 @@
+{
+    "name": "shanginn/telegram-bot-api-framework",
+    "description": "Telegram bot API framework",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Shanginn\\TelegramBotApiFramework\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Nikolai Shangin",
+            "email": "shanginn@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "shanginn/telegram-bot-api-bindings": "^0",
+        "php-http/httplug": "^2.4",
+        "php-http/discovery": "^1.19",
+        "psr/log": "^3.0",
+        "psr-discovery/log-implementations": "^1.0",
+        "psr/http-factory": "^1.0"
+    },
+    "require-dev": {
+        "symfony/var-dumper": "^6.3"
+    },
+    "minimum-stability": "stable",
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    },
+    "scripts": {
+        "fix": [
+            "PHP_CS_FIXER_IGNORE_ENV=1 ./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix -vvv --config=.php-cs-fixer.php --allow-risky=yes"
+        ]
+    }
+}

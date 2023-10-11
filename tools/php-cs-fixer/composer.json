@@ -1,0 +1,6 @@
+{
+    "require": {
+        "friendsofphp/php-cs-fixer": "^3.34",
+        "erickskrauch/php-cs-fixer-custom-fixers": "^1.2"
+    }
+}
