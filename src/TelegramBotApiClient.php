@@ -7,6 +7,7 @@ use Http\Discovery\Psr18ClientDiscovery;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use PsrDiscovery\Discover;
 use Shanginn\TelegramBotApiBindings\TelegramBotApiClientInterface;
 use Shanginn\TelegramBotApiBindings\Types\TypeInterface;
@@ -28,7 +29,7 @@ final class TelegramBotApiClient implements TelegramBotApiClientInterface
     ) {
         $this->client = $client ?? Psr18ClientDiscovery::find();
         $this->requestFactory = $requestFactory ?? Psr17FactoryDiscovery::findRequestFactory();
-        $this->logger = $logger ?? Discover::log();
+        $this->logger = $logger ?? Discover::log() ?? new NullLogger();
     }
 
     public function sendRequest(string $method, array $args = []): mixed
@@ -39,15 +40,29 @@ final class TelegramBotApiClient implements TelegramBotApiClientInterface
             ->createRequest('POST', $url)
             ->withHeader('Content-Type', 'application/json');
 
+        // All the array should be encoded JSON strings.
+        $args = array_map(
+            fn ($param) => is_array($param) ? json_encode($param) : $param,
+            $args
+        );
+
         if (count($args) > 0) {
             $request->getBody()->write(
                 json_encode($args)
             );
         }
 
+        $this->logger->debug("Request [$method]", [
+            'params' => $args,
+        ]);
+
         $response = $this->client->sendRequest($request);
         $responseContent = $response->getBody()->getContents();
         $responseData = json_decode($responseContent, true);
+
+        $this->logger->debug("Response [$method]", [
+            'response' => $responseData,
+        ]);
 
         if (!$responseData || !isset($responseData['ok']) || !$responseData['ok']) {
             $this->logger->error(sprintf(
@@ -65,7 +80,7 @@ final class TelegramBotApiClient implements TelegramBotApiClientInterface
     {
         foreach ($returnTypes as $type) {
             if (class_exists($type) && is_subclass_of($type, TypeInterface::class)) {
-                return new $type(...$response); // Assuming the response can be spread into the type's constructor.
+                return $type::fromResponseResult($response);
             } elseif ($type === 'bool') {
                 return (bool) $response;
             } elseif ($type === 'int') {
@@ -77,7 +92,7 @@ final class TelegramBotApiClient implements TelegramBotApiClientInterface
                 $innerType = $matches[1];
                 $resultArray = [];
                 foreach ($response as $item) {
-                    $resultArray[] = new $innerType(...$item);
+                    $resultArray[] = $this->convertResponseToType($item, [$innerType]);
                 }
 
                 return $resultArray;

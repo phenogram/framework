@@ -2,7 +2,7 @@
     "name": "shanginn/telegram-bot-api-framework",
     "description": "Telegram bot API framework",
     "type": "library",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "license": "MIT",
     "autoload": {
         "psr-4": {
@@ -17,20 +17,24 @@
     ],
     "require": {
         "php": "^8.2",
-        "shanginn/telegram-bot-api-bindings": "^0",
+        "shanginn/telegram-bot-api-bindings": "dev-master",
         "php-http/httplug": "^2.4",
         "php-http/discovery": "^1.19",
         "psr/log": "^3.0",
         "psr-discovery/log-implementations": "^1.0",
-        "psr/http-factory": "^1.0"
+        "psr/http-factory": "^1.0",
+        "react/event-loop": "^1.4"
     },
     "require-dev": {
-        "symfony/var-dumper": "^6.3"
+        "symfony/var-dumper": "^6.3",
+        "pestphp/pest": "^2.23",
+        "vlucas/phpdotenv": "^5.5"
     },
     "minimum-stability": "stable",
     "config": {
         "allow-plugins": {
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "pestphp/pest-plugin": true
         }
     },
     "scripts": {
