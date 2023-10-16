@@ -2,7 +2,7 @@
     "name": "shanginn/telegram-bot-api-framework",
     "description": "Telegram bot API framework",
     "type": "library",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "license": "MIT",
     "autoload": {
         "psr-4": {
@@ -23,7 +23,10 @@
         "psr/log": "^3.0",
         "psr-discovery/log-implementations": "^1.0",
         "psr/http-factory": "^1.0",
-        "react/event-loop": "^1.4"
+        "react/event-loop": "^1.4",
+        "doctrine/annotations": "^2.0",
+        "texthtml/maybe": "^0.6.0",
+        "react/promise": "^3"
     },
     "require-dev": {
         "symfony/var-dumper": "^6.3",
