@@ -6,9 +6,13 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use PsrDiscovery\Discover;
 use React\EventLoop\Loop;
+use React\Promise\PromiseInterface;
 use Shanginn\TelegramBotApiBindings\TelegramBotApi;
 use Shanginn\TelegramBotApiBindings\TelegramBotApiClientInterface;
 use Shanginn\TelegramBotApiBindings\Types\Update;
+use function React\Async\async;
+use function React\Async\await;
+use function React\Promise\all;
 
 class TelegramBot
 {
@@ -34,41 +38,41 @@ class TelegramBot
         $this->logger = $logger ?? Discover::log() ?? new NullLogger();
     }
 
-    public function run(): void
-    {
-        $loop = Loop::get();
-        $timeout = 15;
-
-        $loop->addPeriodicTimer($timeout, function () use ($timeout) {
-            foreach ($this->pollUpdates(timeout: $timeout) as $update) {
-                $this->handleUpdate($update);
-            }
-        });
-
-        $loop->run();
-    }
-
-    public function pollUpdates(
+    public function run(
         int $offset = null,
         ?int $limit = 100,
         int $timeout = null,
         array $allowedUpdates = null,
-    ): \Generator {
+    ): void
+    {
         $offset = $offset ?? 1;
         $timeout = $timeout ?? 15;
 
-        $updates = $this->api->getUpdates(
-            offset: $offset,
-            limit: $limit,
-            timeout: $timeout,
-            allowedUpdates: $allowedUpdates,
-        );
+        Loop::addPeriodicTimer(1, async(function() use (&$offset, $limit, $allowedUpdates, $timeout) {
+            $this->logger->debug('Polling updates', [
+                'offset' => $offset,
+                'limit' => $limit,
+                'allowedUpdates' => $allowedUpdates,
+                'timeout' => $timeout,
+            ]);
 
-        foreach ($updates as $update) {
-            yield $update;
+            $updates = $this->api->getUpdates(
+                offset: $offset,
+                limit: $limit,
+                allowedUpdates: $allowedUpdates,
+            );
 
-            $offset = max($offset, $update->updateId + 1);
-        }
+            $promises = [];
+            foreach ($updates as $update) {
+                $promises[] = $this->handleUpdate($update);
+                $offset = max($offset, $update->updateId + 1);
+            }
+
+            // Wait for all update handling promises to settle
+            await(all($promises));
+        }));
+
+        Loop::run();  // Start the event loop
     }
 
     public function addHandler(UpdateHandlerInterface $handler): self
@@ -78,12 +82,16 @@ class TelegramBot
         return $this;
     }
 
-    public function handleUpdate(Update $update)
+    public function handleUpdate(Update $update): PromiseInterface
     {
-        foreach ($this->handlers as $handler) {
-            if ($handler->supports($update)) {
+        return async(function () use ($update) {
+            foreach ($this->handlers as $handler) {
+                if (!$handler->supports($update)) {
+                    continue;
+                }
+
                 try {
-                    $handler->handle($update, $this);
+                    await($handler->handle($update, $this));
                 } catch (\Throwable $e) {
                     $this->logger->error('Error while handling update', [
                         'update' => $update,
@@ -92,6 +100,6 @@ class TelegramBot
                     ]);
                 }
             }
-        }
+        })();
     }
 }

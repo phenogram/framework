@@ -40,13 +40,9 @@ final class TelegramBotApiClient implements TelegramBotApiClientInterface
             ->createRequest('POST', $url)
             ->withHeader('Content-Type', 'application/json');
 
-        // All the array should be encoded JSON strings.
-        $args = array_map(
-            fn ($param) => is_array($param) ? json_encode($param) : $param,
-            $args
-        );
-
         if (count($args) > 0) {
+            $args = $this->prepareArgs($args);
+
             $request->getBody()->write(
                 json_encode($args)
             );
@@ -106,5 +102,37 @@ final class TelegramBotApiClient implements TelegramBotApiClientInterface
         ));
 
         throw new \UnexpectedValueException(sprintf('Failed to decode response to any of the expected types: %s', implode(', ', $returnTypes)));
+    }
+
+    private function prepareArgs(array $array): array
+    {
+        $result = [];
+
+        foreach ($array as $key => $value) {
+            if (is_null($value)) {
+                continue;
+            }
+
+            $snakeKey = $this->camelToSnake($key);
+
+            if (is_array($value)) {
+                $result[$snakeKey] = $this->prepareArgs($value);
+            } else {
+                $result[$snakeKey] = $value;
+            }
+        }
+
+        // All the array should be encoded JSON strings.
+        $result = array_map(
+            fn ($param) => is_array($param) ? json_encode($param) : $param,
+            $result
+        );
+
+        return $result;
+    }
+
+    private function camelToSnake(string $input): string
+    {
+        return strtolower(preg_replace('/[A-Z]/', '_$0', lcfirst($input)));
     }
 }
