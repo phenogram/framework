@@ -2,37 +2,54 @@
 
 namespace Shanginn\TelegramBotApiFramework;
 
+use Http\Client\HttpAsyncClient;
+use Http\Discovery\HttpAsyncClientDiscovery;
 use Http\Discovery\Psr17FactoryDiscovery;
-use Http\Discovery\Psr18ClientDiscovery;
-use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use PsrDiscovery\Discover;
+use React\Promise\Deferred;
+use React\Promise\PromiseInterface;
 use Shanginn\TelegramBotApiBindings\TelegramBotApiClientInterface;
 use Shanginn\TelegramBotApiBindings\Types\TypeInterface;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Serializer\SerializerInterface;
 
 final class TelegramBotApiClient implements TelegramBotApiClientInterface
 {
-    private ClientInterface $client;
+    private HttpAsyncClient $client;
 
     private RequestFactoryInterface $requestFactory;
 
     private LoggerInterface $logger;
 
+    private SerializerInterface $serializer;
+
     public function __construct(
         private readonly string $token,
-        ClientInterface $client = null,
+        HttpAsyncClient $client = null,
         RequestFactoryInterface $requestFactory = null,
         LoggerInterface $logger = null,
+        SerializerInterface $serializer = null,
         private readonly string $apiUrl = 'https://api.telegram.org',
     ) {
-        $this->client = $client ?? Psr18ClientDiscovery::find();
+        $this->client = $client ?? HttpAsyncClientDiscovery::find();
+
         $this->requestFactory = $requestFactory ?? Psr17FactoryDiscovery::findRequestFactory();
+
         $this->logger = $logger ?? Discover::log() ?? new NullLogger();
+
+        $this->serializer = $serializer ?? new Serializer([new ObjectNormalizer(
+            null,
+            new CamelCaseToSnakeCaseNameConverter()
+        )], [new JsonEncoder()]);
     }
 
-    public function sendRequest(string $method, array $args = []): mixed
+    public function sendRequest(string $method, string $json): PromiseInterface
     {
         $url = "{$this->apiUrl}/bot{$this->token}/{$method}";
 
@@ -40,36 +57,41 @@ final class TelegramBotApiClient implements TelegramBotApiClientInterface
             ->createRequest('POST', $url)
             ->withHeader('Content-Type', 'application/json');
 
-        if (count($args) > 0) {
-            $args = $this->prepareArgs($args);
-
-            $request->getBody()->write(
-                json_encode($args)
-            );
-        }
+        $request->getBody()->write($json);
 
         $this->logger->debug("Request [$method]", [
-            'params' => $args,
+            'params_string' => $json,
         ]);
 
-        $response = $this->client->sendRequest($request);
-        $responseContent = $response->getBody()->getContents();
-        $responseData = json_decode($responseContent, true);
+        $deferred = new Deferred();
 
-        $this->logger->debug("Response [$method]", [
-            'response' => $responseData,
-        ]);
+        $this->client->sendAsyncRequest($request)->then(
+            function ($response) use ($deferred, $method) {
+                $responseContent = $response->getBody()->getContents();
+                $responseData = json_decode($responseContent, true);
 
-        if (!$responseData || !isset($responseData['ok']) || !$responseData['ok']) {
-            $this->logger->error(sprintf(
-                'Telegram API response if not successful: %s',
-                $responseContent
-            ));
+                $this->logger->debug("Response [$method]", [
+                    'response' => $responseData,
+                ]);
 
-            throw new \RuntimeException(sprintf('Telegram API error: %s', $responseData['description'] ?? 'Unknown error'));
-        }
+                if (!$responseData || !isset($responseData['ok']) || !$responseData['ok']) {
+                    $this->logger->error(sprintf(
+                        'Telegram API response is not successful: %s',
+                        $responseContent
+                    ));
 
-        return $responseData['result'];
+                    $deferred->reject(new \RuntimeException(sprintf(
+                        'Telegram API error: %s',
+                        $responseData['description'] ?? 'Unknown error'
+                    )));
+                }
+
+                $deferred->resolve($response);
+            },
+            $deferred->reject(...),
+        );
+
+        return $deferred->promise();
     }
 
     public function convertResponseToType(mixed $response, array $returnTypes): TypeInterface|array|int|string|bool
@@ -104,35 +126,20 @@ final class TelegramBotApiClient implements TelegramBotApiClientInterface
         throw new \UnexpectedValueException(sprintf('Failed to decode response to any of the expected types: %s', implode(', ', $returnTypes)));
     }
 
-    private function prepareArgs(array $array): array
+    public function serialize(mixed $data): string
     {
-        $result = [];
+        return $this->serializer->serialize($data, 'json');
+    }
 
-        foreach ($array as $key => $value) {
-            if (is_null($value)) {
-                continue;
-            }
-
-            $snakeKey = $this->camelToSnake($key);
-
-            if (is_array($value)) {
-                $result[$snakeKey] = $this->prepareArgs($value);
-            } else {
-                $result[$snakeKey] = $value;
+    public function deserialize(string $data, array $types): mixed
+    {
+        foreach ($types as $type) {
+            try {
+                return $this->serializer->deserialize($data, $type, 'json');
+            } catch (\Throwable) {
             }
         }
 
-        // All the array should be encoded JSON strings.
-        $result = array_map(
-            fn ($param) => is_array($param) ? json_encode($param) : $param,
-            $result
-        );
-
-        return $result;
-    }
-
-    private function camelToSnake(string $input): string
-    {
-        return strtolower(preg_replace('/[A-Z]/', '_$0', lcfirst($input)));
+        throw new \UnexpectedValueException(sprintf('Failed to decode response to any of the expected types: %s', implode(', ', $types)));
     }
 }

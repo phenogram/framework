@@ -10,6 +10,7 @@ use React\Promise\PromiseInterface;
 use Shanginn\TelegramBotApiBindings\TelegramBotApi;
 use Shanginn\TelegramBotApiBindings\TelegramBotApiClientInterface;
 use Shanginn\TelegramBotApiBindings\Types\Update;
+
 use function React\Async\async;
 use function React\Async\await;
 use function React\Promise\all;
@@ -43,12 +44,11 @@ class TelegramBot
         ?int $limit = 100,
         int $timeout = null,
         array $allowedUpdates = null,
-    ): void
-    {
+    ): void {
         $offset = $offset ?? 1;
         $timeout = $timeout ?? 15;
 
-        Loop::addPeriodicTimer(1, async(function() use (&$offset, $limit, $allowedUpdates, $timeout) {
+        Loop::addPeriodicTimer(1, async(function () use (&$offset, $limit, $allowedUpdates, $timeout) {
             $this->logger->debug('Polling updates', [
                 'offset' => $offset,
                 'limit' => $limit,
@@ -56,23 +56,25 @@ class TelegramBot
                 'timeout' => $timeout,
             ]);
 
-            $updates = $this->api->getUpdates(
+            $updates = await($this->api->getUpdates(
                 offset: $offset,
                 limit: $limit,
                 allowedUpdates: $allowedUpdates,
-            );
+            ));
 
             $promises = [];
             foreach ($updates as $update) {
-                $promises[] = $this->handleUpdate($update);
+                foreach ($this->handleUpdate($update) as $handlerPromise) {
+                    $promises[] = $handlerPromise;
+                }
+
                 $offset = max($offset, $update->updateId + 1);
             }
 
-            // Wait for all update handling promises to settle
             await(all($promises));
         }));
 
-        Loop::run();  // Start the event loop
+        Loop::run();
     }
 
     public function addHandler(UpdateHandlerInterface $handler): self
@@ -82,24 +84,28 @@ class TelegramBot
         return $this;
     }
 
-    public function handleUpdate(Update $update): PromiseInterface
+    /**
+     * @return \Generator<PromiseInterface>
+     */
+    public function handleUpdate(Update $update): \Generator
     {
-        return async(function () use ($update) {
-            foreach ($this->handlers as $handler) {
-                if (!$handler->supports($update)) {
-                    continue;
-                }
+        foreach ($this->handlers as $handler) {
+            if (!$handler->supports($update)) {
+                continue;
+            }
 
-                try {
-                    await($handler->handle($update, $this));
-                } catch (\Throwable $e) {
-                    $this->logger->error('Error while handling update', [
+            try {
+                yield $handler->handle($update, $this);
+            } catch (\Throwable $e) {
+                $this->logger->error(
+                    sprintf('Error while handling update: %s', $e->getMessage()),
+                    [
                         'update' => $update,
                         'handler' => get_class($handler),
                         'exception' => $e,
-                    ]);
-                }
+                    ]
+                );
             }
-        })();
+        }
     }
 }
