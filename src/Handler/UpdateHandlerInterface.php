@@ -1,9 +1,10 @@
 <?php
 
-namespace Shanginn\TelegramBotApiFramework;
+namespace Shanginn\TelegramBotApiFramework\Handler;
 
 use React\Promise\PromiseInterface;
 use Shanginn\TelegramBotApiBindings\Types\Update;
+use Shanginn\TelegramBotApiFramework\TelegramBot;
 
 interface UpdateHandlerInterface
 {

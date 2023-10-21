@@ -24,13 +24,9 @@
         "psr-discovery/log-implementations": "^1.0",
         "psr/http-factory": "^1.0",
         "react/event-loop": "^1.4",
-        "doctrine/annotations": "^2.0",
         "texthtml/maybe": "^0.6.0",
         "react/promise": "^3",
         "react/async": "^4.1",
-        "symfony/serializer": "^6.3",
-        "symfony/validator": "^6.3",
-        "symfony/property-access": "^6.3",
         "react/promise-timer": "^1.10"
     },
     "require-dev": {

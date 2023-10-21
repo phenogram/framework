@@ -13,6 +13,7 @@ use Shanginn\TelegramBotApiBindings\TelegramBotApiClientInterface;
 use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializer;
 use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializerInterface;
 use Shanginn\TelegramBotApiBindings\Types\Update;
+use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
 
 class TelegramBot
 {
@@ -90,6 +91,9 @@ class TelegramBot
                         }
 
                         $offset = max($offset, $update->updateId + 1);
+
+                        // Mark update as read?
+                        // $this->api->getUpdates(offset: $offset, limit: 1);
                     }
                 },
                 function (\Throwable $e) {
