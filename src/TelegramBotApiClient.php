@@ -20,6 +20,7 @@ use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 
+use function React\Async\async;
 use function React\Promise\reject;
 
 final class TelegramBotApiClient implements TelegramBotApiClientInterface
@@ -160,13 +161,17 @@ final class TelegramBotApiClient implements TelegramBotApiClientInterface
 
     private function sendAsyncRequest(RequestInterface $request): PromiseInterface
     {
-        $deferred = new Deferred();
-
-        $this->client->sendAsyncRequest($request)->then(
-            $deferred->resolve(...),
-            $deferred->reject(...),
-        );
-
-        return $deferred->promise();
+        return async(fn () => $this->client->sendAsyncRequest($request)->wait())();
+        //
+        //      TODO: why this doesn't work?
+        //
+        //        $deferred = new Deferred();
+        //
+        //        $this->client->sendAsyncRequest($request)->then(
+        //            $deferred->resolve(...),
+        //            $deferred->reject(...),
+        //        );
+        //
+        //        return $deferred->promise();
     }
 }

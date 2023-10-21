@@ -7,15 +7,12 @@ use Psr\Log\NullLogger;
 use PsrDiscovery\Discover;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
+use React\Promise\Timer;
 use Shanginn\TelegramBotApiBindings\TelegramBotApi;
 use Shanginn\TelegramBotApiBindings\TelegramBotApiClientInterface;
 use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializer;
 use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializerInterface;
 use Shanginn\TelegramBotApiBindings\Types\Update;
-
-use function React\Async\async;
-use function React\Async\await;
-use function React\Promise\all;
 
 class TelegramBot
 {
@@ -49,82 +46,69 @@ class TelegramBot
         array $allowedUpdates = null,
     ): void {
         $offset = $offset ?? 1;
-        $timeout = $timeout ?? 2;
+        $timeout = $timeout ?? 15;
 
-        //        Loop::addPeriodicTimer($timeout, async(function () use (&$offset, $limit, $allowedUpdates, $timeout) {
-        //            $this->logger->debug('Polling updates', [
-        //                'offset' => $offset,
-        //                'limit' => $limit,
-        //                'allowedUpdates' => $allowedUpdates,
-        //                'timeout' => $timeout,
-        //            ]);
-        //
-        //            $updates = await($this->api->getUpdates(
-        //                offset: $offset,
-        //                limit: $limit,
-        //                allowedUpdates: $allowedUpdates,
-        //            ));
-        //
-        //            $this->logger->debug('Got updates', [
-        //                'updates' => $updates,
-        //            ]);
-        //
-        //            if ($updates === null) {
-        //                return;
-        //            }
-        //
-        //            $promises = [];
-        //            foreach ($updates as $update) {
-        //                foreach ($this->handleUpdate($update) as $handlerPromise) {
-        //                    $promises[] = $handlerPromise;
-        //                }
-        //
-        //                $offset = max($offset, $update->updateId + 1);
-        //            }
-        //
-        //            await(all($promises));
-        //        }));
+        $this->pullUpdates(
+            offset: $offset,
+            limit: $limit,
+            timeout: $timeout,
+            allowedUpdates: $allowedUpdates,
+        );
 
-        //        Loop::addPeriodicTimer($timeout, function () use (&$offset, $limit, $allowedUpdates, $timeout) {
-        //            $this->logger->debug('Polling updates', [
-        //                'offset' => $offset,
-        //                'limit' => $limit,
-        //                'allowedUpdates' => $allowedUpdates,
-        //                'timeout' => $timeout,
-        //            ]);
+        Loop::run();
+    }
 
-        $this->api
+    private function pullUpdates(
+        int $offset,
+        ?int $limit,
+        int $timeout,
+        ?array $allowedUpdates,
+    ): PromiseInterface {
+        $this->logger->debug('Polling updates', [
+            'offset' => $offset,
+            'limit' => $limit,
+            'allowedUpdates' => $allowedUpdates,
+            'timeout' => $timeout,
+        ]);
+
+        return $this->api
             ->getUpdates(
                 offset: $offset,
                 limit: $limit,
                 allowedUpdates: $allowedUpdates,
             )
-            ->then(function ($updates) use (&$offset) {
-                $this->logger->debug('Got updates', [
-                    'updates' => $updates,
-                ]);
+            ->then(
+                function ($updates) use (&$offset) {
+                    $this->logger->debug('Got updates', [
+                        'updates' => $updates,
+                    ]);
 
-                $promises = [];
-                foreach ($updates as $update) {
-                    foreach ($this->handleUpdate($update) as $handlerPromise) {
-                        $promises[] = $handlerPromise;
+                    $promises = [];
+                    foreach ($updates as $update) {
+                        foreach ($this->handleUpdate($update) as $handlerPromise) {
+                            $promises[] = $handlerPromise;
+                        }
+
+                        $offset = max($offset, $update->updateId + 1);
                     }
-
-                    $offset = max($offset, $update->updateId + 1);
-                }
-            },
+                },
                 function (\Throwable $e) {
-                    $this->logger->error(
-                        sprintf('Error while pooling updates %s', $e->getMessage()),
-                        [
-                            'error' => $e,
-                        ]
-                    );
-                }
-            );
-        //        });
+                    $waitTime = 5;
 
-        //        Loop::run();
+                    $this->logger->error(sprintf(
+                        'Error while pooling updates %s. Waiting for %d seconds until next pull',
+                        $e->getMessage(),
+                        $waitTime,
+                    ), [
+                        'error' => $e,
+                    ]);
+
+                    return Timer\sleep(5);
+                }
+            )
+            ->then(
+                fn () => $this->pullUpdates($offset, $limit, $timeout, $allowedUpdates)
+            );
     }
 
     public function addHandler(UpdateHandlerInterface $handler): self
