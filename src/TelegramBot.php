@@ -15,6 +15,9 @@ use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializerInterface;
 use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
 
+use function React\Async\parallel;
+use function React\Promise\all;
+
 class TelegramBot
 {
     public TelegramBotApi $api;
@@ -22,9 +25,16 @@ class TelegramBot
     /**
      * @var array<UpdateHandlerInterface>
      */
-    protected array $handlers = [];
+    private array $handlers = [];
 
     private LoggerInterface $logger;
+
+    /**
+     * @var array<PromiseInterface>
+     */
+    private array $promises = [];
+
+    private ?PromiseInterface $pullUpdatesPromise = null;
 
     public function __construct(
         protected readonly string $token,
@@ -49,7 +59,14 @@ class TelegramBot
         $offset = $offset ?? 1;
         $timeout = $timeout ?? 15;
 
-        $this->pullUpdates(
+        $this->logger->info(sprintf(
+            'Starting bot with offset %d, limit %d, timeout %d',
+            $offset,
+            $limit,
+            $timeout,
+        ));
+
+        $this->pullUpdatesPromise = $this->pullUpdates(
             offset: $offset,
             limit: $limit,
             timeout: $timeout,
@@ -57,6 +74,28 @@ class TelegramBot
         );
 
         Loop::run();
+    }
+
+    public function stop(float $timeout = null): void
+    {
+        $this->logger->info('Stopping bot');
+
+        $this->pullUpdatesPromise->cancel();
+
+        $this->logger->info(sprintf(
+            'Waiting for pending promises%s',
+            $timeout !== null ? sprintf(' for %d seconds', $timeout) : '',
+        ));
+
+        if ($timeout !== null) {
+            $waitingPromise = Timer\timeout(all($this->promises), $timeout);
+        } else {
+            $waitingPromise = all($this->promises);
+        }
+
+        $waitingPromise->then(
+            fn () => Loop::stop()
+        );
     }
 
     private function pullUpdates(
@@ -84,11 +123,8 @@ class TelegramBot
                         'updates' => $updates,
                     ]);
 
-                    $promises = [];
                     foreach ($updates as $update) {
-                        foreach ($this->handleUpdate($update) as $handlerPromise) {
-                            $promises[] = $handlerPromise;
-                        }
+                        $this->promises[] = $this->handleUpdate($update);
 
                         $offset = max($offset, $update->updateId + 1);
 
@@ -123,31 +159,20 @@ class TelegramBot
     }
 
     /**
-     * @return array<PromiseInterface>
+     * @return PromiseInterface<PromiseInterface[]>
      */
-    public function handleUpdate(Update $update): array
+    public function handleUpdate(Update $update): PromiseInterface
     {
-        $promises = [];
+        $supportedHandlers = array_filter(
+            $this->handlers,
+            fn (UpdateHandlerInterface $handler) => $handler->supports($update)
+        );
 
-        foreach ($this->handlers as $handler) {
-            if (!$handler->supports($update)) {
-                continue;
-            }
+        $tasks = array_map(
+            fn (UpdateHandlerInterface $handler) => fn () => $handler->handle($update, $this),
+            $supportedHandlers
+        );
 
-            try {
-                $promises[] = $handler->handle($update, $this);
-            } catch (\Throwable $e) {
-                $this->logger->error(
-                    sprintf('Error while handling update: %s', $e->getMessage()),
-                    [
-                        'update' => $update,
-                        'handler' => get_class($handler),
-                        'exception' => $e,
-                    ]
-                );
-            }
-        }
-        
-        return $promises;
+        return parallel($tasks);
     }
 }

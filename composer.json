@@ -2,11 +2,16 @@
     "name": "shanginn/telegram-bot-api-framework",
     "description": "Telegram bot API framework",
     "type": "library",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Shanginn\\TelegramBotApiFramework\\": "src/"
+            "Shanginn\\TelegramBotApiFramework\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Shanginn\\TelegramBotApiFramework\\Tests\\": "tests"
         }
     },
     "authors": [
@@ -18,8 +23,6 @@
     "require": {
         "php": "^8.2",
         "shanginn/telegram-bot-api-bindings": "dev-master",
-        "php-http/httplug": "^2.4",
-        "php-http/discovery": "^1.19",
         "psr/log": "^3.0",
         "psr-discovery/log-implementations": "^1.0",
         "psr/http-factory": "^1.0",
@@ -27,17 +30,18 @@
         "texthtml/maybe": "^0.6.0",
         "react/promise": "^3",
         "react/async": "^4.1",
-        "react/promise-timer": "^1.10"
+        "react/promise-timer": "^1.10",
+        "react/http": "^1.9"
     },
     "require-dev": {
         "symfony/var-dumper": "^6.3",
         "pestphp/pest": "^2.23",
-        "vlucas/phpdotenv": "^5.5"
+        "vlucas/phpdotenv": "^5.5",
+        "monolog/monolog": "^3.4"
     },
     "minimum-stability": "stable",
     "config": {
         "allow-plugins": {
-            "php-http/discovery": true,
             "pestphp/pest-plugin": true
         }
     },
