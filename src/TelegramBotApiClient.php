@@ -13,6 +13,7 @@ use Psr\Log\NullLogger;
 use PsrDiscovery\Discover;
 use React\Promise\PromiseInterface;
 use Shanginn\TelegramBotApiBindings\TelegramBotApiClientInterface;
+use Shanginn\TelegramBotApiFramework\Exception\TelegramBotApiException;
 
 use function React\Async\async;
 use function React\Promise\reject;
@@ -69,8 +70,8 @@ final class TelegramBotApiClient implements TelegramBotApiClientInterface
                         $responseContent
                     ));
 
-                    return reject(new \RuntimeException(sprintf(
-                        'Telegram API error: %s',
+                    return reject(new TelegramBotApiException(sprintf(
+                        'Telegram bot API error: %s',
                         $responseData['description'] ?? 'Unknown error'
                     )));
                 }

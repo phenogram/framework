@@ -123,17 +123,19 @@ class TelegramBot
     }
 
     /**
-     * @return \Generator<PromiseInterface>
+     * @return array<PromiseInterface>
      */
-    public function handleUpdate(Update $update): \Generator
+    public function handleUpdate(Update $update): array
     {
+        $promises = [];
+
         foreach ($this->handlers as $handler) {
             if (!$handler->supports($update)) {
                 continue;
             }
 
             try {
-                yield $handler->handle($update, $this);
+                $promises[] = $handler->handle($update, $this);
             } catch (\Throwable $e) {
                 $this->logger->error(
                     sprintf('Error while handling update: %s', $e->getMessage()),
@@ -145,5 +147,7 @@ class TelegramBot
                 );
             }
         }
+        
+        return $promises;
     }
 }
