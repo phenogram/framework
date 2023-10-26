@@ -124,12 +124,9 @@ class TelegramBot
                     ]);
 
                     foreach ($updates as $update) {
-                        $this->promises[] = $this->handleUpdate($update);
-
                         $offset = max($offset, $update->updateId + 1);
 
-                        // Mark update as read?
-                        // $this->api->getUpdates(offset: $offset, limit: 1);
+                        $this->promises[] = $this->handleUpdate($update);
                     }
                 },
                 function (\Throwable $e) {
@@ -147,7 +144,10 @@ class TelegramBot
                 }
             )
             ->then(
-                fn () => $this->pullUpdates($offset, $limit, $timeout, $allowedUpdates)
+                // Can't use `fn() =>` syntax here, because we need to capture $offset by reference
+                function () use (&$offset, $limit, $timeout, $allowedUpdates) {
+                    return $this->pullUpdates($offset, $limit, $timeout, $allowedUpdates);
+                }
             );
     }
 
