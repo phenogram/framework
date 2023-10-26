@@ -3,13 +3,12 @@
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use React\EventLoop\Loop;
-use React\Promise\PromiseInterface;
 use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
 use Shanginn\TelegramBotApiFramework\TelegramBot;
 use Shanginn\TelegramBotApiFramework\Tests\Mock\MockTelegramBotApiClient;
 
-use function React\Promise\resolve;
+use function React\Async\await;
 
 test('Update handlers are working in pulling', function () {
     $logger = new Logger('test', [
@@ -47,9 +46,13 @@ test('Update handlers are working in pulling', function () {
                 return true;
             }
 
-            public function handle(Update $update, TelegramBot $bot): PromiseInterface
+            public function handle(Update $update, TelegramBot $bot)
             {
-                return resolve(++$this->counter);
+                await(
+                    \React\Promise\Timer\sleep(1),
+                );
+
+                ++$this->counter;
             }
         }
     );
@@ -80,10 +83,11 @@ test('Can handle single update without event loop', function () {
                 return true;
             }
 
-            public function handle(Update $update, TelegramBot $bot): PromiseInterface
+            public function handle(Update $update, TelegramBot $bot): void
             {
-                return React\Promise\Timer\sleep(1)
-                    ->then(fn () => resolve(++$this->counter));
+                await(React\Promise\Timer\sleep(1));
+
+                ++$this->counter;
             }
         }
     );

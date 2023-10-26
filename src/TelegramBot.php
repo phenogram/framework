@@ -15,6 +15,7 @@ use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializerInterface;
 use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
 
+use function React\Async\async;
 use function React\Async\await;
 use function React\Async\parallel;
 use function React\Promise\all;
@@ -170,7 +171,7 @@ class TelegramBot
         );
 
         $tasks = array_map(
-            fn (UpdateHandlerInterface $handler) => fn () => $handler->handle($update, $this),
+            fn (UpdateHandlerInterface $handler) => async(fn () => $handler->handle($update, $this)),
             $supportedHandlers
         );
 
