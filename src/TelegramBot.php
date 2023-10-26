@@ -15,6 +15,7 @@ use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializerInterface;
 use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
 
+use function React\Async\await;
 use function React\Async\parallel;
 use function React\Promise\all;
 
@@ -159,7 +160,7 @@ class TelegramBot
     }
 
     /**
-     * @return PromiseInterface<PromiseInterface[]>
+     * @return PromiseInterface<array<mixed>>
      */
     public function handleUpdate(Update $update): PromiseInterface
     {
@@ -174,5 +175,15 @@ class TelegramBot
         );
 
         return parallel($tasks);
+    }
+
+    /**
+     * @return array<mixed>
+     *
+     * @throws \Throwable
+     */
+    public function handleUpdateSync(Update $update): array
+    {
+        return await($this->handleUpdate($update));
     }
 }
