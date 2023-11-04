@@ -24,7 +24,9 @@ final class TelegramBotApiClient implements TelegramBotApiClientInterface
         private readonly string $apiUrl = 'https://api.telegram.org',
         LoggerInterface $logger = null,
     ) {
-        $this->client = new Browser();
+        $this->client = (new Browser())
+            ->withTimeout(false);
+
         $this->logger = $logger ?? Discover::log() ?? new NullLogger();
     }
 
@@ -63,27 +65,34 @@ final class TelegramBotApiClient implements TelegramBotApiClientInterface
 
                     return json_encode($responseData['result']);
                 },
-                function (ResponseException $e) use ($method) {
-                    $response = $e->getResponse();
-                    $responseContent = $response->getBody()->getContents();
-                    $responseData = $this->decodeJson($responseContent, $method);
+                function (\Throwable $e) use ($method) {
+                    $context = [];
+                    $errorMessage = sprintf(
+                        'Request [%s] failed (%s)',
+                        $method,
+                        $e->getMessage()
+                    );
 
-                    $this->logger->debug("Response [$method]", [
-                        'response' => $responseData,
-                    ]);
+                    if ($e instanceof ResponseException) {
+                        $response = $e->getResponse();
+                        $responseContent = $response->getBody()->getContents();
+                        $responseData = $this->decodeJson($responseContent, $method);
+
+                        $this->logger->debug("Response [$method]", [
+                            'response' => $responseData,
+                        ]);
+
+                        $errorMessage .= ': ' . $responseData['description'] ?? 'Unknown error';
+                        $context = $responseData;
+                    }
 
                     $this->logger->error(sprintf(
                         'Request [%s] failed (%s)',
                         $method,
                         $e->getMessage()
-                    ), $responseData);
+                    ), $context);
 
-                    return reject(new TelegramBotApiException(sprintf(
-                        'Request [%s] failed (%s): %s',
-                        $method,
-                        $e->getMessage(),
-                        $responseData['description'] ?? 'Unknown error'
-                    )));
+                    return reject(new TelegramBotApiException($errorMessage));
                 }
             );
     }
