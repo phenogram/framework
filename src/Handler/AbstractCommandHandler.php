@@ -3,6 +3,7 @@
 namespace Shanginn\TelegramBotApiFramework\Handler;
 
 use Shanginn\TelegramBotApiBindings\Types\MessageEntity;
+use Shanginn\TelegramBotApiBindings\Types\Update;
 
 abstract class AbstractCommandHandler implements UpdateHandlerInterface
 {
@@ -56,5 +57,27 @@ abstract class AbstractCommandHandler implements UpdateHandlerInterface
         }
 
         return $byteOffset;
+    }
+
+    protected function hasCommand(Update $update, string $command): bool
+    {
+        $message = $update->message;
+
+        if ($message === null || $message->entities === null || $message->text === null) {
+            return false;
+        }
+
+        $commands = $this->extractCommands(
+            entities: $message->entities,
+            text: $message->text
+        );
+
+        foreach ($commands as $commandStr) {
+            if ($commandStr === $command) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
