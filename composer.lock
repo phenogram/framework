@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "efa23cff0b58068f6c4036b5074e4a05",
+    "content-hash": "8868ddb4427b03202a6d4fb061513a80",
     "packages": [
         {
             "name": "composer/semver",
@@ -1266,12 +1266,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/shanginn/telegram-bot-api-php-bindings.git",
-                "reference": "6276613db01aa3e3215dee19a9ccc53280e7cbbd"
+                "reference": "518c370fea716c454a1ef2c0fe16ab3e0c2ee7f2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/shanginn/telegram-bot-api-php-bindings/zipball/6276613db01aa3e3215dee19a9ccc53280e7cbbd",
-                "reference": "6276613db01aa3e3215dee19a9ccc53280e7cbbd",
+                "url": "https://api.github.com/repos/shanginn/telegram-bot-api-php-bindings/zipball/518c370fea716c454a1ef2c0fe16ab3e0c2ee7f2",
+                "reference": "518c370fea716c454a1ef2c0fe16ab3e0c2ee7f2",
                 "shasum": ""
             },
             "require": {
@@ -1308,7 +1308,7 @@
                 "issues": "https://github.com/shanginn/telegram-bot-api-php-bindings/issues",
                 "source": "https://github.com/shanginn/telegram-bot-api-php-bindings/tree/master"
             },
-            "time": "2024-01-03T15:52:15+00:00"
+            "time": "2024-01-04T07:17:19+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
