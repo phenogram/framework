@@ -2,6 +2,6 @@
 
 namespace Shanginn\TelegramBotApiFramework\Exception;
 
-class TelegramBotApiException extends PhenogramException
+class PhenogramException extends \RuntimeException
 {
 }

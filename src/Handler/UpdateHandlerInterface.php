@@ -7,7 +7,5 @@ use Shanginn\TelegramBotApiFramework\TelegramBot;
 
 interface UpdateHandlerInterface
 {
-    public function supports(Update $update): bool;
-
     public function handle(Update $update, TelegramBot $bot);
 }

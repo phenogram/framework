@@ -165,15 +165,24 @@ class TelegramBot
      */
     public function handleUpdate(Update $update): PromiseInterface
     {
-        $supportedHandlers = array_filter(
-            $this->handlers,
-            fn (UpdateHandlerInterface $handler) => $handler->supports($update)
-        );
+//        $supportedHandlers = array_filter(
+//            $this->handlers,
+//            fn (UpdateHandlerInterface $handler) => $handler->supports($update)
+//        );
+//
+//        $tasks = array_map(
+//            fn (UpdateHandlerInterface $handler) => async(fn () => $handler->handle($update, $this)),
+//            $supportedHandlers
+//        );
+//
+//        return parallel($tasks);
+        $tasks = [];
 
-        $tasks = array_map(
-            fn (UpdateHandlerInterface $handler) => async(fn () => $handler->handle($update, $this)),
-            $supportedHandlers
-        );
+        foreach ($this->handlers as $handler) {
+            if ($handler->supports($update)) {
+                $tasks[] = async(fn () => $handler->handle($update, $this));
+            }
+        }
 
         return parallel($tasks);
     }
