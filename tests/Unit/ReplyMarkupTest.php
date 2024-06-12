@@ -1,13 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Shanginn\TelegramBotApiFramework\Tests\Unit;
+
 use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializer;
 use Shanginn\TelegramBotApiBindings\Types\InlineKeyboardButton;
 use Shanginn\TelegramBotApiBindings\Types\InlineKeyboardMarkup;
+use Shanginn\TelegramBotApiFramework\Tests\TestCase;
 
-test('InlineKeyboardMarkup is a valid json', function () {
-    $serializer = new TelegramBotApiSerializer();
-    $inlineKeyboardMarkup = new InlineKeyboardMarkup(
-        inlineKeyboard: [
+final class ReplyMarkupTest extends TestCase
+{
+    public function testInlineKeyboardMarkup()
+    {
+        $serializer = new TelegramBotApiSerializer();
+        $inlineKeyboardMarkup = new InlineKeyboardMarkup(
+            inlineKeyboard: [
                 [
                     new InlineKeyboardButton(
                         text: 'Button 1',
@@ -25,25 +33,26 @@ test('InlineKeyboardMarkup is a valid json', function () {
                     ),
                 ],
             ],
-    );
+        );
 
-    $arrayKeyboard = [
-        'reply_markup' => [
-            'inline_keyboard' => [
-                [
-                    ['text' => 'Button 1', 'callback_data' => 'data1'],
-                    ['text' => 'Button 2', 'callback_data' => 'data2'],
-                ],
-                [
-                    ['text' => 'Button 3', 'callback_data' => 'data3'],
+        $arrayKeyboard = [
+            'reply_markup' => [
+                'inline_keyboard' => [
+                    [
+                        ['text' => 'Button 1', 'callback_data' => 'data1'],
+                        ['text' => 'Button 2', 'callback_data' => 'data2'],
+                    ],
+                    [
+                        ['text' => 'Button 3', 'callback_data' => 'data3'],
+                    ],
                 ],
             ],
-        ],
-    ];
+        ];
 
-    $json = $serializer->serialize([
-        'reply_markup' => $inlineKeyboardMarkup,
-    ]);
+        $json = $serializer->serialize([
+            'reply_markup' => $inlineKeyboardMarkup,
+        ]);
 
-    expect($json)->toBe(json_encode($arrayKeyboard));
-});
+        $this->assertEquals(json_encode($arrayKeyboard), $json);
+    }
+}

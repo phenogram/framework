@@ -35,16 +35,11 @@
     },
     "require-dev": {
         "symfony/var-dumper": "^6.3",
-        "pestphp/pest": "^2.23",
         "vlucas/phpdotenv": "^5.5",
-        "monolog/monolog": "^3.4"
+        "monolog/monolog": "^3.4",
+        "phpunit/phpunit": "^11"
     },
     "minimum-stability": "stable",
-    "config": {
-        "allow-plugins": {
-            "pestphp/pest-plugin": true
-        }
-    },
     "scripts": {
         "fix": [
             "PHP_CS_FIXER_IGNORE_ENV=1 ./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix -vvv --config=.php-cs-fixer.php --allow-risky=yes"
