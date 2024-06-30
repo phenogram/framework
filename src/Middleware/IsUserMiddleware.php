@@ -12,8 +12,7 @@ readonly class IsUserMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private int $userId
-    )
-    {
+    ) {
     }
 
     public function process(Update $update, UpdateHandlerInterface $handler, TelegramBot $bot)

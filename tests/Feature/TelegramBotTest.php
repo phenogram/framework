@@ -11,13 +11,14 @@ use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
 use Shanginn\TelegramBotApiFramework\TelegramBot;
 use Shanginn\TelegramBotApiFramework\Tests\Mock\MockTelegramBotApiClient;
-
 use Shanginn\TelegramBotApiFramework\Tests\TestCase;
+
 use function React\Async\await;
 
 final class TelegramBotTest extends TestCase
 {
-    function testUpdateHandlersAreWorkingInPulling() {
+    public function testUpdateHandlersAreWorkingInPulling()
+    {
         $logger = new Logger('test', [
             new StreamHandler('php://stdout'),
         ]);
@@ -45,8 +46,7 @@ final class TelegramBotTest extends TestCase
             new class($counter) implements UpdateHandlerInterface {
                 public function __construct(
                     private int &$counter
-                )
-                {
+                ) {
                 }
 
                 public function supports(Update $update): bool
@@ -65,7 +65,7 @@ final class TelegramBotTest extends TestCase
             }
         );
 
-        Loop::addTimer(2, fn() => $bot->stop());
+        Loop::addTimer(2, fn () => $bot->stop());
 
         $bot->run();
 
@@ -84,8 +84,7 @@ final class TelegramBotTest extends TestCase
             new class($counter) implements UpdateHandlerInterface {
                 public function __construct(
                     private int &$counter
-                )
-                {
+                ) {
                 }
 
                 public function supports(Update $update): bool

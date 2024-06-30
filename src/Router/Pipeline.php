@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Middleware;
+namespace Shanginn\TelegramBotApiFramework\Router;
 
 use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Exception\PipelineException;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
+use Shanginn\TelegramBotApiFramework\Middleware\MiddlewareInterface;
+use Shanginn\TelegramBotApiFramework\Middleware\MiddlewareTrait;
 use Shanginn\TelegramBotApiFramework\TelegramBot;
 
 /**

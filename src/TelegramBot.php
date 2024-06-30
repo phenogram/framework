@@ -2,6 +2,7 @@
 
 namespace Shanginn\TelegramBotApiFramework;
 
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use PsrDiscovery\Discover;
@@ -14,14 +15,20 @@ use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializer;
 use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializerInterface;
 use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
+use Shanginn\TelegramBotApiFramework\Interface\ContainerizedInterface;
+use Shanginn\TelegramBotApiFramework\Router\RouteConfigurator;
+use Shanginn\TelegramBotApiFramework\Router\Router;
+use Shanginn\TelegramBotApiFramework\Trait\ContainerTrait;
 
 use function React\Async\async;
 use function React\Async\await;
 use function React\Async\parallel;
 use function React\Promise\all;
 
-class TelegramBot
+class TelegramBot implements ContainerizedInterface
 {
+    use ContainerTrait;
+
     public TelegramBotApi $api;
 
     /**
@@ -38,11 +45,14 @@ class TelegramBot
 
     private ?PromiseInterface $pullUpdatesPromise = null;
 
+    private Router $router;
+
     public function __construct(
         protected readonly string $token,
         TelegramBotApiClientInterface $botClient = null,
         TelegramBotApiSerializerInterface $serializer = null,
         LoggerInterface $logger = null,
+        ContainerInterface $container = null,
     ) {
         $this->logger = $logger ?? Discover::log() ?? new NullLogger();
 
@@ -50,6 +60,8 @@ class TelegramBot
             client: $botClient ?? new TelegramBotApiClient($token),
             serializer: $serializer ?? new TelegramBotApiSerializer(),
         );
+
+        $this->router = new Router();
     }
 
     public function run(
@@ -153,11 +165,9 @@ class TelegramBot
             );
     }
 
-    public function addHandler(UpdateHandlerInterface $handler): self
+    public function addHandler(UpdateHandlerInterface|\Closure|string $handler): RouteConfigurator
     {
-        $this->handlers[] = $handler;
-
-        return $this;
+        return $this->router->add()->handler($handler);
     }
 
     /**
@@ -165,23 +175,10 @@ class TelegramBot
      */
     public function handleUpdate(Update $update): PromiseInterface
     {
-//        $supportedHandlers = array_filter(
-//            $this->handlers,
-//            fn (UpdateHandlerInterface $handler) => $handler->supports($update)
-//        );
-//
-//        $tasks = array_map(
-//            fn (UpdateHandlerInterface $handler) => async(fn () => $handler->handle($update, $this)),
-//            $supportedHandlers
-//        );
-//
-//        return parallel($tasks);
         $tasks = [];
 
-        foreach ($this->handlers as $handler) {
-            if ($handler->supports($update)) {
-                $tasks[] = async(fn () => $handler->handle($update, $this));
-            }
+        foreach ($this->router->supportedHandlers($update) as $handler) {
+            $tasks[] = async(fn () => $handler->getHandler()->handle($update, $this));
         }
 
         return parallel($tasks);

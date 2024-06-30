@@ -21,7 +21,7 @@
         }
     ],
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "shanginn/telegram-bot-api-bindings": "dev-master",
         "psr/log": "^3.0",
         "psr-discovery/log-implementations": "^1.0",
@@ -31,7 +31,8 @@
         "react/promise": "^3",
         "react/async": "^4.1",
         "react/promise-timer": "^1.10",
-        "react/http": "^1.9"
+        "react/http": "^1.9",
+        "psr/container": "^2.0"
     },
     "require-dev": {
         "symfony/var-dumper": "^6.3",
