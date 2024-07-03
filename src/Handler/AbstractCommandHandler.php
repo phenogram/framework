@@ -13,7 +13,7 @@ abstract class AbstractCommandHandler implements UpdateHandlerInterface, RouteIn
      *
      * @return array<string>
      */
-    protected function extractCommands(array $entities, string $text): array
+    protected static function extractCommands(array $entities, string $text): array
     {
         $commands = [];
 
@@ -25,7 +25,7 @@ abstract class AbstractCommandHandler implements UpdateHandlerInterface, RouteIn
         $bytes = unpack('C*', $text);
 
         foreach ($botCommands as $entity) {
-            $byteOffset = $this->utf16OffsetToByteOffset($text, $entity->offset);
+            $byteOffset = self::utf16OffsetToByteOffset($text, $entity->offset);
 
             $commandBytes = array_slice($bytes, $byteOffset, $entity->length);
             $commandStr = pack('C*', ...$commandBytes);
@@ -35,7 +35,7 @@ abstract class AbstractCommandHandler implements UpdateHandlerInterface, RouteIn
         return $commands;
     }
 
-    protected function utf16OffsetToByteOffset(string $text, int $utf16Offset): int
+    private static function utf16OffsetToByteOffset(string $text, int $utf16Offset): int
     {
         $byteOffset = 0;
         $utf16Counter = 0;
@@ -60,7 +60,7 @@ abstract class AbstractCommandHandler implements UpdateHandlerInterface, RouteIn
         return $byteOffset;
     }
 
-    protected function hasCommand(Update $update, string $command): bool
+    protected static function hasCommand(Update $update, string $command): bool
     {
         $message = $update->message;
 
@@ -68,7 +68,7 @@ abstract class AbstractCommandHandler implements UpdateHandlerInterface, RouteIn
             return false;
         }
 
-        $commands = $this->extractCommands(
+        $commands = self::extractCommands(
             entities: $message->entities,
             text: $message->text
         );
