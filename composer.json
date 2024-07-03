@@ -2,7 +2,7 @@
     "name": "shanginn/telegram-bot-api-framework",
     "description": "Telegram bot API framework",
     "type": "library",
-    "version": "0.16.0",
+    "version": "0.17.0",
     "license": "MIT",
     "autoload": {
         "psr-4": {
