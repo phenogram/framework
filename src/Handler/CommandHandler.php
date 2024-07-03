@@ -3,8 +3,9 @@
 namespace Shanginn\TelegramBotApiFramework\Handler;
 
 use Shanginn\TelegramBotApiBindings\Types\Update;
+use Shanginn\TelegramBotApiFramework\Interface\RouteInterface;
 
-class CommandHandler extends AbstractCommandHandler
+class CommandHandler extends AbstractCommandHandler implements RouteInterface
 {
     use CommandCallbackHandlerTrait;
 
@@ -25,10 +26,15 @@ class CommandHandler extends AbstractCommandHandler
             && $update->message->text !== null
             && in_array(
                 $this->command,
-                $this->extractCommands(
+                self::extractCommands(
                     $update->message->entities,
                     $update->message->text
                 )
             );
+    }
+
+    public function getHandler(): UpdateHandlerInterface
+    {
+        return $this;
     }
 }

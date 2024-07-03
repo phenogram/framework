@@ -4,9 +4,8 @@ namespace Shanginn\TelegramBotApiFramework\Handler;
 
 use Shanginn\TelegramBotApiBindings\Types\MessageEntity;
 use Shanginn\TelegramBotApiBindings\Types\Update;
-use Shanginn\TelegramBotApiFramework\Interface\RouteInterface;
 
-abstract class AbstractCommandHandler implements UpdateHandlerInterface, RouteInterface
+abstract class AbstractCommandHandler implements UpdateHandlerInterface
 {
     /**
      * @param array<MessageEntity> $entities
