@@ -49,11 +49,6 @@ final class TelegramBotTest extends TestCase
                 ) {
                 }
 
-                public function supports(Update $update): bool
-                {
-                    return true;
-                }
-
                 public function handle(Update $update, TelegramBot $bot)
                 {
                     await(
@@ -87,11 +82,6 @@ final class TelegramBotTest extends TestCase
                 ) {
                 }
 
-                public function supports(Update $update): bool
-                {
-                    return true;
-                }
-
                 public function handle(Update $update, TelegramBot $bot): void
                 {
                     await(\React\Promise\Timer\sleep(1));
@@ -108,5 +98,49 @@ final class TelegramBotTest extends TestCase
         );
 
         $this->assertEquals(1, $counter);
+    }
+
+    public function testExceptionInUpdateHandlerIsCaught()
+    {
+        $logger = new Logger('test', [
+            new StreamHandler('php://stdout'),
+        ]);
+
+        $client = new MockTelegramBotApiClient(
+            1.5,
+            '[]'
+        );
+
+        $updateResponse = '[{"update_id":437567765}]';
+        $client->addResponse(
+            $updateResponse,
+            'getUpdates'
+        );
+
+        $bot = new TelegramBot(
+            token: 'token',
+            logger: $logger,
+            botClient: $client,
+        );
+
+        $counter = 0;
+
+//        $bot->addHandler(
+//            new class() implements UpdateHandlerInterface {
+//                public function handle(Update $update, TelegramBot $bot)
+//                {
+//                    throw new \Exception('test');
+//                }
+//            }
+//        );
+
+        $bot->addHandler(fn () => throw new \Exception('test1'));
+        $bot->addHandler(fn () => throw new \Exception('test2'));
+
+//        Loop::addTimer(2, fn () => $bot->stop());
+
+        $bot->run();
+
+        $this->assertEquals(0, $counter);
     }
 }

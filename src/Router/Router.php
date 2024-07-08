@@ -20,20 +20,19 @@ final class Router
 
     private RouteCollection $collection;
 
-    public function __construct(ContainerInterface $container = null)
+    public function __construct()
     {
         $this->collection = new RouteCollection();
-        $this->container = $container;
     }
 
     /**
-     * @return \Generator<RouteInterface>
+     * @return \Generator<UpdateHandlerInterface>
      */
     public function supportedHandlers(Update $update): \Generator
     {
         foreach ($this->collection->all() as $route) {
             if ($route->supports($update)) {
-                yield $route;
+                yield $route->getHandler();
             }
         }
     }
@@ -109,6 +108,10 @@ final class Router
         }
 
         try {
+            if (!$this->hasContainer()) {
+                throw new RouteException('Unable to configure route pipeline without associated container');
+            }
+
             return $this->container->get($target);
         } catch (ContainerExceptionInterface $e) {
             throw new RouteException('Invalid target resolution', $e->getCode(), $e);

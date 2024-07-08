@@ -52,7 +52,6 @@ class TelegramBot implements ContainerizedInterface
         TelegramBotApiClientInterface $botClient = null,
         TelegramBotApiSerializerInterface $serializer = null,
         LoggerInterface $logger = null,
-        ContainerInterface $container = null,
     ) {
         $this->logger = $logger ?? Discover::log() ?? new NullLogger();
 
@@ -62,6 +61,16 @@ class TelegramBot implements ContainerizedInterface
         );
 
         $this->router = new Router();
+    }
+
+    public function withContainer(ContainerInterface $container): self
+    {
+        $self = clone $this;
+        $self->container = $container;
+
+        $self->router = $this->router->withContainer($container);
+
+        return $self;
     }
 
     public function run(
@@ -137,11 +146,22 @@ class TelegramBot implements ContainerizedInterface
                         'updates' => $updates,
                     ]);
 
+                    $promises = [];
+
+                    /** @var Update $update */
                     foreach ($updates as $update) {
                         $offset = max($offset, $update->updateId + 1);
 
-                        $this->promises[] = $this->handleUpdate($update);
+                        $promises[] = $this->promises[$update->updateId] = async(
+                            fn () => $this
+                                ->handleUpdate($update)
+                                ->then(function () use ($update) {
+                                    unset($this->promises[$update->updateId]);
+                                })
+                        );
                     }
+
+                    return parallel($promises);
                 },
                 function (\Throwable $e) {
                     $waitTime = 5;
@@ -154,7 +174,18 @@ class TelegramBot implements ContainerizedInterface
                         'error' => $e,
                     ]);
 
-                    return Timer\sleep(5);
+                    return Timer\sleep($waitTime);
+                }
+            )
+            ->then(
+                null,
+                function (\Throwable $e){
+                    $this->logger->error(sprintf(
+                        'Error while handling updates: %s.',
+                        $e->getMessage(),
+                    ), [
+                        'error' => $e,
+                    ]);
                 }
             )
             ->then(
@@ -170,6 +201,11 @@ class TelegramBot implements ContainerizedInterface
         return $this->router->add()->handler($handler);
     }
 
+    public function addRoute(): RouteConfigurator
+    {
+        return $this->router->add();
+    }
+
     /**
      * @return PromiseInterface<array<mixed>>
      */
@@ -178,7 +214,7 @@ class TelegramBot implements ContainerizedInterface
         $tasks = [];
 
         foreach ($this->router->supportedHandlers($update) as $handler) {
-            $tasks[] = async(fn () => $handler->getHandler()->handle($update, $this));
+            $tasks[] = async(fn () => $handler->handle($update, $this));
         }
 
         return parallel($tasks);

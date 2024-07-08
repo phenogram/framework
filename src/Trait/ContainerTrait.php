@@ -24,9 +24,9 @@ trait ContainerTrait
 
     public function withContainer(ContainerInterface $container): self
     {
-        $router = clone $this;
-        $router->container = $container;
+        $self = clone $this;
+        $self->container = $container;
 
-        return $router;
+        return $self;
     }
 }

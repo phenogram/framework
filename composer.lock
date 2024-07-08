@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7c95b10cfe7e05a283d8e970fe151dc9",
+    "content-hash": "0eb558d65a6b907114a23a4cd25a940f",
     "packages": [
         {
             "name": "composer/semver",
@@ -1255,12 +1255,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/shanginn/telegram-bot-api-php-bindings.git",
-                "reference": "6adf1001a42e9207623c9793374ab77f1d5f6acd"
+                "reference": "0b57746d90a48d3e04ad82bb87bf046c70fb933d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/shanginn/telegram-bot-api-php-bindings/zipball/6adf1001a42e9207623c9793374ab77f1d5f6acd",
-                "reference": "6adf1001a42e9207623c9793374ab77f1d5f6acd",
+                "url": "https://api.github.com/repos/shanginn/telegram-bot-api-php-bindings/zipball/0b57746d90a48d3e04ad82bb87bf046c70fb933d",
+                "reference": "0b57746d90a48d3e04ad82bb87bf046c70fb933d",
                 "shasum": ""
             },
             "require": {
@@ -1295,9 +1295,9 @@
             "description": "Low level type-safe PHP bindings for the Telegram Bot API",
             "support": {
                 "issues": "https://github.com/shanginn/telegram-bot-api-php-bindings/issues",
-                "source": "https://github.com/shanginn/telegram-bot-api-php-bindings/tree/0.17.0"
+                "source": "https://github.com/shanginn/telegram-bot-api-php-bindings/tree/0.18.0"
             },
-            "time": "2024-07-03T14:36:12+00:00"
+            "time": "2024-07-08T04:14:34+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",

@@ -6,14 +6,12 @@ use Shanginn\TelegramBotApiBindings\Types\Update;
 
 abstract class AbstractStartCommandHandler extends AbstractCommandHandler
 {
-    private string $command = '/start';
-
     /**
      * @var bool Handle /start if it is the only command in the message
      */
-    protected bool $strict = true;
+    protected static bool $strict = true;
 
-    public function supports(Update $update): bool
+    public static function supports(Update $update): bool
     {
         $message = $update->message;
 
@@ -21,18 +19,18 @@ abstract class AbstractStartCommandHandler extends AbstractCommandHandler
             return false;
         }
 
-        $commands = $this->extractCommands(
+        $commands = static::extractCommands(
             entities: $message->entities,
             text: $message->text
         );
 
-        if ($this->strict) {
+        if (static::$strict) {
             return count($commands) === 1
-                && str_starts_with($commands[0], $this->command);
+                && str_starts_with($commands[0], '/start');
         }
 
         foreach ($commands as $command) {
-            if (str_starts_with($command, $this->command)) {
+            if (str_starts_with($command, '/start')) {
                 return true;
             }
         }
