@@ -8,7 +8,6 @@ use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Exception\PipelineException;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
 use Shanginn\TelegramBotApiFramework\Middleware\MiddlewareInterface;
-use Shanginn\TelegramBotApiFramework\Middleware\MiddlewareTrait;
 use Shanginn\TelegramBotApiFramework\TelegramBot;
 
 /**
@@ -30,12 +29,12 @@ final class Pipeline implements UpdateHandlerInterface, MiddlewareInterface
         return $pipeline;
     }
 
-    public function process(Update $update, UpdateHandlerInterface $handler, TelegramBot $bot)
+    public function process(Update $update, UpdateHandlerInterface $handler, TelegramBot $bot): void
     {
-        return $this->withHandler($handler)->handle($update, $bot);
+        $this->withHandler($handler)->handle($update, $bot);
     }
 
-    public function handle(Update $update, TelegramBot $bot)
+    public function handle(Update $update, TelegramBot $bot): void
     {
         if ($this->handler === null) {
             throw new PipelineException('Unable to run pipeline, no handler given.');
@@ -45,9 +44,11 @@ final class Pipeline implements UpdateHandlerInterface, MiddlewareInterface
         if (isset($this->middleware[$position])) {
             $middleware = $this->middleware[$position];
 
-            return $middleware->process($update, $this, $bot);
+            $middleware->process($update, $this, $bot);
+
+            return;
         }
 
-        return $this->handler->handle($update, $bot);
+        $this->handler->handle($update, $bot);
     }
 }

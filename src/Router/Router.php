@@ -11,6 +11,7 @@ use Shanginn\TelegramBotApiFramework\Exception\RouteException;
 use Shanginn\TelegramBotApiFramework\Handler\CallableHandler;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
 use Shanginn\TelegramBotApiFramework\Interface\RouteInterface;
+use Shanginn\TelegramBotApiFramework\Middleware\CallableMiddleware;
 use Shanginn\TelegramBotApiFramework\Middleware\MiddlewareInterface;
 use Shanginn\TelegramBotApiFramework\Trait\ContainerTrait;
 
@@ -55,46 +56,42 @@ final class Router
             throw new RouteException(\sprintf('This route has no defined target. Call one of: `callable`, `handler` methods.'));
         }
 
-        $pipeline = $this
-            ->createPipelineWithMiddleware($routeConfig->middleware ?? [])
-            ->withHandler(
-                $this->getHandler($routeConfig->target)
-            );
+        $handler = $this->getHandler($routeConfig->target);
+
+        $middlewares = array_map(
+            fn (string|MiddlewareInterface $middleware) => $this->getMiddleware($middleware),
+            $routeConfig->middleware ?? []
+        );
 
         $this->register(
             new BasicRoute(
-                handler: $pipeline,
+                handler: $handler,
+                middlewares: $middlewares,
                 condition: $routeConfig->condition
             ),
         );
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     */
-    private function createPipelineWithMiddleware(array $middleware): Pipeline
+    private function getMiddleware(string|callable|MiddlewareInterface $middleware): MiddlewareInterface
     {
-        if (\count($middleware) === 1 && $middleware[0] instanceof Pipeline) {
-            return $middleware[0];
+        if ($middleware instanceof MiddlewareInterface) {
+            return $middleware;
         }
 
-        $pipeline = new Pipeline();
+        if (\is_callable($middleware)) {
+            return new CallableMiddleware($middleware);
+        }
 
-        foreach ($middleware as $item) {
-            if ($item instanceof MiddlewareInterface) {
-                $pipeline->pushMiddleware($item);
-            } elseif (\is_string($item)) {
-                $item = $this->container->get($item);
-                \assert($item instanceof MiddlewareInterface);
-
-                $pipeline->pushMiddleware($item);
-            } else {
-                $name = get_debug_type($item);
-                throw new RouteException(\sprintf('Invalid middleware `%s`', $name));
+        if (\is_string($middleware)) {
+            if (!$this->hasContainer()) {
+                throw new RouteException('Unable to configure route pipeline without associated container');
             }
+
+            return $this->container->get($middleware);
         }
 
-        return $pipeline;
+        $name = get_debug_type($middleware);
+        throw new RouteException(\sprintf('Invalid middleware `%s`', $name));
     }
 
     private function getHandler(string|callable|UpdateHandlerInterface $target): UpdateHandlerInterface

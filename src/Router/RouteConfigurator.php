@@ -14,6 +14,7 @@ final class RouteConfigurator
 
     private ?string $group = null;
 
+    /** @var MiddlewareInterface[]|string[]|callable[]|null */
     private ?array $middleware = null;
 
     /**
@@ -78,7 +79,7 @@ final class RouteConfigurator
         return $this;
     }
 
-    public function middleware(MiddlewareInterface|string|array $middleware): self
+    public function middleware(MiddlewareInterface|string|callable|array $middleware): self
     {
         if (!\is_array($middleware)) {
             $middleware = [$middleware];

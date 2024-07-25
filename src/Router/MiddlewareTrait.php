@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Middleware;
+namespace Shanginn\TelegramBotApiFramework\Router;
+
+use Shanginn\TelegramBotApiFramework\Middleware\MiddlewareInterface;
 
 /**
  * Provides ability to manage set of middleware.

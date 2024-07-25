@@ -6,23 +6,27 @@ namespace Shanginn\TelegramBotApiFramework\Router;
 
 use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
+use Shanginn\TelegramBotApiFramework\Interface\RouteInterface;
 
-final class BasicRoute extends AbstractRoute
+final class BasicRoute implements RouteInterface
 {
+    use PipelineTrait;
+
     /** @var callable|null */
     private $condition;
 
     public function __construct(
-        UpdateHandlerInterface $handler,
+        private UpdateHandlerInterface $handler,
+        private array $middlewares = [],
         callable $condition = null,
     ) {
-        $this->pipeline = new Pipeline();
+        $this->pipeline = new Pipeline();;
+
+        foreach ($middlewares as $middleware) {
+            $this->pipeline->pushMiddleware($middleware);
+        }
+
         $this->condition = $condition;
-
-        parent::__construct($handler);
-
-        // TODO: check middleware with container
-        $this->middleware = $this->config->middleware ?? [];
     }
 
     public function supports(Update $update): bool
@@ -32,5 +36,10 @@ final class BasicRoute extends AbstractRoute
         }
 
         return ($this->condition)($update);
+    }
+
+    public function getHandler(): UpdateHandlerInterface
+    {
+        return $this->pipeline->withHandler($this->handler);
     }
 }

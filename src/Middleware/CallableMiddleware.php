@@ -8,17 +8,19 @@ use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
 use Shanginn\TelegramBotApiFramework\TelegramBot;
 
-readonly class IsUserMiddleware implements MiddlewareInterface
+class CallableMiddleware implements MiddlewareInterface
 {
+    /** @var callable */
+    private $callable;
+
     public function __construct(
-        private int $userId
+        callable $callable
     ) {
+        $this->callable = $callable;
     }
 
     public function process(Update $update, UpdateHandlerInterface $handler, TelegramBot $bot): void
     {
-        if ($update->message->from->id === $this->userId) {
-            $handler->handle($update, $bot);
-        }
+        ($this->callable)($update, $handler, $bot);
     }
 }

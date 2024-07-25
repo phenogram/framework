@@ -10,5 +10,5 @@ use Shanginn\TelegramBotApiFramework\TelegramBot;
 
 interface MiddlewareInterface
 {
-    public function process(Update $update, UpdateHandlerInterface $handler, TelegramBot $bot);
+    public function process(Update $update, UpdateHandlerInterface $handler, TelegramBot $bot): void;
 }
