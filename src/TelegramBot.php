@@ -103,8 +103,6 @@ class TelegramBot implements ContainerizedInterface
     {
         $this->logger->info('Stopping bot');
 
-        $this->pullUpdatesPromise?->cancel();
-
         $this->logger->info(sprintf(
             'Waiting for pending promises%s',
             $timeout !== null ? sprintf(' for %d seconds', $timeout) : '',
@@ -196,71 +194,6 @@ class TelegramBot implements ContainerizedInterface
 
         return parallel($tasks)
             ->then(fn () => $pullUpdatesPromise);
-
-//        return $this->api
-//            ->getUpdates(
-//                offset: $offset,
-//                limit: $limit,
-//                allowedUpdates: $allowedUpdates,
-//            )
-//            ->then(
-//                function ($updates) use (&$offset, $limit, $timeout, $allowedUpdates) {
-//                    $this->logger->debug('Got updates', [
-//                        'updates' => $updates,
-//                    ]);
-//
-//                    $tasks = [];
-//
-//                    /** @var Update $update */
-//                    foreach ($updates as $update) {
-//                        $offset = max($offset, $update->updateId + 1);
-//
-//                        $tasks[] = $this->promises[$update->updateId] = async(
-//                            fn () => $this
-//                                ->handleUpdate($update)
-//                                ->then(function () use ($update) {
-//                                    unset($this->promises[$update->updateId]);
-//                                })
-//                        );
-//                    }
-//
-//                    // Can't use `fn() =>` syntax here, because we need to capture $offset by reference
-//                    $this->pullUpdates($offset, $limit, $timeout, $allowedUpdates);
-//
-//                    return parallel($tasks);
-//                },
-//                function (\Throwable $e) {
-//                    $waitTime = 5;
-//
-//                    $this->logger->error(sprintf(
-//                        'Error while pooling updates %s. Waiting for %d seconds until next pull',
-//                        $e->getMessage(),
-//                        $waitTime,
-//                    ), [
-//                        'error' => $e,
-//                    ]);
-//
-//                    return Timer\sleep($waitTime);
-//                }
-//            )
-//            ->then(
-//                null,
-//                function (\Throwable $e) {
-//                    $this->logger->error(sprintf(
-//                        'Error while handling updates: %s.',
-//                        $e->getMessage(),
-//                    ), [
-//                        'error' => $e,
-//                    ]);
-//                }
-//            )
-////            ->then(
-////                // Can't use `fn() =>` syntax here, because we need to capture $offset by reference
-////                function () use (&$offset, $limit, $timeout, $allowedUpdates) {
-////                    return $this->pullUpdates($offset, $limit, $timeout, $allowedUpdates);
-////                }
-////            )
-//            ;
     }
 
     public function addHandler(UpdateHandlerInterface|\Closure|string $handler): RouteConfigurator
@@ -284,18 +217,6 @@ class TelegramBot implements ContainerizedInterface
             $tasks[] = async(fn () => $handler->handle($update, $this));
         }
 
-        dump($tasks);
-
         return parallel($tasks);
     }
-
-//    /**
-//     * @return array<mixed>
-//     *
-//     * @throws \Throwable
-//     */
-//    public function handleUpdateSync(Update $update): array
-//    {
-//        return await($this->handleUpdate($update));
-//    }
 }
