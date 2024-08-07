@@ -2,7 +2,7 @@
     "name": "shanginn/telegram-bot-api-framework",
     "description": "Telegram bot API framework",
     "type": "library",
-    "version": "0.19.1",
+    "version": "0.20.0",
     "license": "MIT",
     "autoload": {
         "psr-4": {
@@ -27,7 +27,6 @@
         "psr-discovery/log-implementations": "^1.0",
         "psr/http-factory": "^1.0",
         "react/event-loop": "^1.4",
-        "texthtml/maybe": "^0.6.0",
         "react/promise": "^3",
         "react/async": "^4.1",
         "react/promise-timer": "^1.10",

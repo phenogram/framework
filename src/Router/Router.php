@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Shanginn\TelegramBotApiFramework\Router;
 
 use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
 use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Exception\RouteException;
 use Shanginn\TelegramBotApiFramework\Handler\CallableHandler;

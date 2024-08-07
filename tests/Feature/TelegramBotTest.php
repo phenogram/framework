@@ -67,38 +67,38 @@ final class TelegramBotTest extends TestCase
         $this->assertEquals(1, $counter);
     }
 
-//    public function testCanHandleSingleUpdateWithoutEventLoop()
-//    {
-//        $bot = new TelegramBot(
-//            token: 'token',
-//        );
-//
-//        $counter = 0;
-//
-//        $bot->addHandler(
-//            new class($counter) implements UpdateHandlerInterface {
-//                public function __construct(
-//                    private int &$counter
-//                ) {
-//                }
-//
-//                public function handle(Update $update, TelegramBot $bot): void
-//                {
-//                    await(\React\Promise\Timer\sleep(1));
-//
-//                    ++$this->counter;
-//                }
-//            }
-//        );
-//
-//        $bot->handleUpdateSync(
-//            new Update(
-//                updateId: 1,
-//            )
-//        );
-//
-//        $this->assertEquals(1, $counter);
-//    }
+    //    public function testCanHandleSingleUpdateWithoutEventLoop()
+    //    {
+    //        $bot = new TelegramBot(
+    //            token: 'token',
+    //        );
+    //
+    //        $counter = 0;
+    //
+    //        $bot->addHandler(
+    //            new class($counter) implements UpdateHandlerInterface {
+    //                public function __construct(
+    //                    private int &$counter
+    //                ) {
+    //                }
+    //
+    //                public function handle(Update $update, TelegramBot $bot): void
+    //                {
+    //                    await(\React\Promise\Timer\sleep(1));
+    //
+    //                    ++$this->counter;
+    //                }
+    //            }
+    //        );
+    //
+    //        $bot->handleUpdateSync(
+    //            new Update(
+    //                updateId: 1,
+    //            )
+    //        );
+    //
+    //        $this->assertEquals(1, $counter);
+    //    }
 
     public function testExceptionInUpdateHandlerIsCaught()
     {
@@ -126,8 +126,8 @@ final class TelegramBotTest extends TestCase
         $counter = 0;
 
         $bot->addHandler(fn () => throw new \Exception('test1'));
-        $bot->addHandler(function(Update $update, TelegramBot $bot) use (&$counter) {
-            $counter++;
+        $bot->addHandler(function (Update $update, TelegramBot $bot) use (&$counter) {
+            ++$counter;
 
             $bot->stop();
         });

@@ -20,7 +20,7 @@ final class BasicRoute implements RouteInterface
         private array $middlewares = [],
         callable $condition = null,
     ) {
-        $this->pipeline = new Pipeline();;
+        $this->pipeline = new Pipeline();
 
         foreach ($middlewares as $middleware) {
             $this->pipeline->pushMiddleware($middleware);

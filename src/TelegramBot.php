@@ -73,6 +73,11 @@ class TelegramBot implements ContainerizedInterface
         return $self;
     }
 
+    public function getToken(): string
+    {
+        return $this->token;
+    }
+
     public function run(
         int $offset = null,
         ?int $limit = 100,
