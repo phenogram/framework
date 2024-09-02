@@ -2,8 +2,8 @@
 
 namespace Shanginn\TelegramBotApiFramework\Handler;
 
+use Phenogram\Bindings\Types\Update;
 use React\Promise\PromiseInterface;
-use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\TelegramBot;
 
 trait CommandCallbackHandlerTrait

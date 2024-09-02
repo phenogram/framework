@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Shanginn\TelegramBotApiFramework\Router;
 
+use Phenogram\Bindings\Types\Update;
 use Psr\Container\ContainerExceptionInterface;
-use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Exception\RouteException;
 use Shanginn\TelegramBotApiFramework\Handler\CallableHandler;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;

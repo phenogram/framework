@@ -2,6 +2,7 @@
 
 namespace Shanginn\TelegramBotApiFramework;
 
+use Phenogram\Bindings\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -9,12 +10,11 @@ use PsrDiscovery\Discover;
 use React\Http\Browser;
 use React\Http\Message\ResponseException;
 use React\Promise\PromiseInterface;
-use Shanginn\TelegramBotApiBindings\TelegramBotApiClientInterface;
 use Shanginn\TelegramBotApiFramework\Exception\TelegramBotApiException;
 
 use function React\Promise\reject;
 
-final class TelegramBotApiClient implements TelegramBotApiClientInterface
+final class TelegramBotApiClient implements ClientInterface
 {
     private LoggerInterface $logger;
     private Browser $client;

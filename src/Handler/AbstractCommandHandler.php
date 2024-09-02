@@ -2,8 +2,8 @@
 
 namespace Shanginn\TelegramBotApiFramework\Handler;
 
-use Shanginn\TelegramBotApiBindings\Types\MessageEntity;
-use Shanginn\TelegramBotApiBindings\Types\Update;
+use Phenogram\Bindings\Types\MessageEntity;
+use Phenogram\Bindings\Types\Update;
 
 abstract class AbstractCommandHandler implements UpdateHandlerInterface
 {

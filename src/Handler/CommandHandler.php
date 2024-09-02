@@ -2,7 +2,7 @@
 
 namespace Shanginn\TelegramBotApiFramework\Handler;
 
-use Shanginn\TelegramBotApiBindings\Types\Update;
+use Phenogram\Bindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Interface\RouteInterface;
 
 class CommandHandler extends AbstractCommandHandler implements RouteInterface

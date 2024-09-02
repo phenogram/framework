@@ -2,6 +2,11 @@
 
 namespace Shanginn\TelegramBotApiFramework;
 
+use Phenogram\Bindings\Api;
+use Phenogram\Bindings\ClientInterface;
+use Phenogram\Bindings\Serializer;
+use Phenogram\Bindings\SerializerInterface;
+use Phenogram\Bindings\Types\Update;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -9,11 +14,6 @@ use PsrDiscovery\Discover;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
 use React\Promise\Timer;
-use Shanginn\TelegramBotApiBindings\TelegramBotApi;
-use Shanginn\TelegramBotApiBindings\TelegramBotApiClientInterface;
-use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializer;
-use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializerInterface;
-use Shanginn\TelegramBotApiBindings\Types\Update;
 use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
 use Shanginn\TelegramBotApiFramework\Interface\ContainerizedInterface;
 use Shanginn\TelegramBotApiFramework\Router\RouteConfigurator;
@@ -29,7 +29,7 @@ class TelegramBot implements ContainerizedInterface
 {
     use ContainerTrait;
 
-    public TelegramBotApi $api;
+    public Api $api;
 
     /**
      * @var array<UpdateHandlerInterface>
@@ -49,15 +49,15 @@ class TelegramBot implements ContainerizedInterface
 
     public function __construct(
         protected readonly string $token,
-        TelegramBotApiClientInterface $botClient = null,
-        TelegramBotApiSerializerInterface $serializer = null,
+        ClientInterface $botClient = null,
+        SerializerInterface $serializer = null,
         LoggerInterface $logger = null,
     ) {
         $this->logger = $logger ?? Discover::log() ?? new NullLogger();
 
-        $this->api = new TelegramBotApi(
+        $this->api = new Api(
             client: $botClient ?? new TelegramBotApiClient($token),
-            serializer: $serializer ?? new TelegramBotApiSerializer(),
+            serializer: $serializer ?? new Serializer(),
         );
 
         $this->router = new Router();
@@ -120,7 +120,17 @@ class TelegramBot implements ContainerizedInterface
         }
 
         $waitingPromise->then(
-            fn () => Loop::stop()
+            fn () => Loop::stop(),
+            function (\Throwable $e) {
+                $this->logger->error(sprintf(
+                    'Error while waiting for pending promises: %s',
+                    $e->getMessage(),
+                ), [
+                    'error' => $e,
+                ]);
+
+                Loop::stop();
+            }
         );
     }
 
@@ -154,7 +164,16 @@ class TelegramBot implements ContainerizedInterface
                 'error' => $e,
             ]);
 
-            await(Timer\sleep($waitTime));
+            try {
+                await(Timer\sleep($waitTime));
+            } catch (\Throwable $e) {
+                $this->logger->error(sprintf(
+                    'Error while waiting for next pull: %s',
+                    $e->getMessage(),
+                ), [
+                    'error' => $e,
+                ]);
+            }
 
             return $this->pullUpdates($offset, $limit, $timeout, $allowedUpdates);
         }

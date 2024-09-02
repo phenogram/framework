@@ -2,12 +2,12 @@
 
 namespace Shanginn\TelegramBotApiFramework\Tests\Mock;
 
+use Phenogram\Bindings\ClientInterface;
 use React\Promise\Promise;
 use React\Promise\PromiseInterface;
 use React\Promise\Timer;
-use Shanginn\TelegramBotApiBindings\TelegramBotApiClientInterface;
 
-class MockTelegramBotApiClient implements TelegramBotApiClientInterface
+class MockTelegramBotApiClient implements ClientInterface
 {
     private const NONE_METHOD_KEY = '_none';
     public array $responses = [];

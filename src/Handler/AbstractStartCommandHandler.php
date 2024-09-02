@@ -2,7 +2,7 @@
 
 namespace Shanginn\TelegramBotApiFramework\Handler;
 
-use Shanginn\TelegramBotApiBindings\Types\Update;
+use Phenogram\Bindings\Types\Update;
 
 abstract class AbstractStartCommandHandler extends AbstractCommandHandler
 {

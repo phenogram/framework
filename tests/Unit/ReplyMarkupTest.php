@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Shanginn\TelegramBotApiFramework\Tests\Unit;
 
-use Shanginn\TelegramBotApiBindings\TelegramBotApiSerializer;
-use Shanginn\TelegramBotApiBindings\Types\InlineKeyboardButton;
-use Shanginn\TelegramBotApiBindings\Types\InlineKeyboardMarkup;
+use Phenogram\Bindings\Serializer;
+use Phenogram\Bindings\Types\InlineKeyboardButton;
+use Phenogram\Bindings\Types\InlineKeyboardMarkup;
 use Shanginn\TelegramBotApiFramework\Tests\TestCase;
 
 final class ReplyMarkupTest extends TestCase
 {
     public function testInlineKeyboardMarkup()
     {
-        $serializer = new TelegramBotApiSerializer();
+        $serializer = new Serializer();
         $inlineKeyboardMarkup = new InlineKeyboardMarkup(
             inlineKeyboard: [
                 [
