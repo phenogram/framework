@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Handler;
+namespace Phenogram\Framework\Handler;
 
 use Phenogram\Bindings\Types\Update;
-use Shanginn\TelegramBotApiFramework\TelegramBot;
+use Phenogram\Framework\TelegramBot;
 
 class CallableHandler implements UpdateHandlerInterface
 {

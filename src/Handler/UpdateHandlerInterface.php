@@ -1,9 +1,9 @@
 <?php
 
-namespace Shanginn\TelegramBotApiFramework\Handler;
+namespace Phenogram\Framework\Handler;
 
 use Phenogram\Bindings\Types\Update;
-use Shanginn\TelegramBotApiFramework\TelegramBot;
+use Phenogram\Framework\TelegramBot;
 
 interface UpdateHandlerInterface
 {

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Router;
+namespace Phenogram\Framework\Router;
 
-use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
-use Shanginn\TelegramBotApiFramework\Middleware\MiddlewareInterface;
-use Shanginn\TelegramBotApiFramework\Trait\ContainerTrait;
+use Phenogram\Framework\Handler\UpdateHandlerInterface;
+use Phenogram\Framework\Middleware\MiddlewareInterface;
+use Phenogram\Framework\Trait\ContainerTrait;
 
 final class RouteConfigurator
 {

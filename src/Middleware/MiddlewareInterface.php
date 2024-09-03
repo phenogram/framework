@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Middleware;
+namespace Phenogram\Framework\Middleware;
 
 use Phenogram\Bindings\Types\Update;
-use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
-use Shanginn\TelegramBotApiFramework\TelegramBot;
+use Phenogram\Framework\Handler\UpdateHandlerInterface;
+use Phenogram\Framework\TelegramBot;
 
 interface MiddlewareInterface
 {

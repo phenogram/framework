@@ -1,8 +1,9 @@
 <?php
 
-namespace Shanginn\TelegramBotApiFramework;
+namespace Phenogram\Framework;
 
 use Phenogram\Bindings\ClientInterface;
+use Phenogram\Framework\Exception\TelegramBotApiException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -10,7 +11,6 @@ use PsrDiscovery\Discover;
 use React\Http\Browser;
 use React\Http\Message\ResponseException;
 use React\Promise\PromiseInterface;
-use Shanginn\TelegramBotApiFramework\Exception\TelegramBotApiException;
 
 use function React\Promise\reject;
 

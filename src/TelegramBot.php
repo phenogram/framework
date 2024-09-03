@@ -1,12 +1,17 @@
 <?php
 
-namespace Shanginn\TelegramBotApiFramework;
+namespace Phenogram\Framework;
 
 use Phenogram\Bindings\Api;
 use Phenogram\Bindings\ClientInterface;
 use Phenogram\Bindings\Serializer;
 use Phenogram\Bindings\SerializerInterface;
 use Phenogram\Bindings\Types\Update;
+use Phenogram\Framework\Handler\UpdateHandlerInterface;
+use Phenogram\Framework\Interface\ContainerizedInterface;
+use Phenogram\Framework\Router\RouteConfigurator;
+use Phenogram\Framework\Router\Router;
+use Phenogram\Framework\Trait\ContainerTrait;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -14,11 +19,6 @@ use PsrDiscovery\Discover;
 use React\EventLoop\Loop;
 use React\Promise\PromiseInterface;
 use React\Promise\Timer;
-use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
-use Shanginn\TelegramBotApiFramework\Interface\ContainerizedInterface;
-use Shanginn\TelegramBotApiFramework\Router\RouteConfigurator;
-use Shanginn\TelegramBotApiFramework\Router\Router;
-use Shanginn\TelegramBotApiFramework\Trait\ContainerTrait;
 
 use function React\Async\async;
 use function React\Async\await;

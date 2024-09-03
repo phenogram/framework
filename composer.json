@@ -1,17 +1,17 @@
 {
-    "name": "shanginn/telegram-bot-api-framework",
+    "name": "phenogram/framework",
     "description": "Telegram bot API framework",
     "type": "library",
-    "version": "0.22.0",
+    "version": "1.0.0",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Shanginn\\TelegramBotApiFramework\\": "src"
+            "Phenogram\\Framework\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Shanginn\\TelegramBotApiFramework\\Tests\\": "tests"
+            "Phenogram\\Framework\\Tests\\": "tests"
         }
     },
     "authors": [

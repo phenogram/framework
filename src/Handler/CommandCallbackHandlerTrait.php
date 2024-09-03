@@ -1,10 +1,10 @@
 <?php
 
-namespace Shanginn\TelegramBotApiFramework\Handler;
+namespace Phenogram\Framework\Handler;
 
 use Phenogram\Bindings\Types\Update;
+use Phenogram\Framework\TelegramBot;
 use React\Promise\PromiseInterface;
-use Shanginn\TelegramBotApiFramework\TelegramBot;
 
 trait CommandCallbackHandlerTrait
 {

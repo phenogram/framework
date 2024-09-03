@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Router;
+namespace Phenogram\Framework\Router;
 
-use Shanginn\TelegramBotApiFramework\Interface\RouteInterface;
-use Shanginn\TelegramBotApiFramework\Middleware\MiddlewareInterface;
+use Phenogram\Framework\Interface\RouteInterface;
+use Phenogram\Framework\Middleware\MiddlewareInterface;
 
 /**
  * @psalm-type MiddlewareType = MiddlewareInterface|class-string<MiddlewareInterface>|non-empty-string

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Exception;
+namespace Phenogram\Framework\Exception;
 
 class RouteException extends PhenogramException
 {

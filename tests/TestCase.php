@@ -1,6 +1,6 @@
 <?php
 
-namespace Shanginn\TelegramBotApiFramework\Tests;
+namespace Phenogram\Framework\Tests;
 
 use PHPUnit\Framework\TestCase as BaseTestCase;
 

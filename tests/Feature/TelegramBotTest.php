@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Tests\Feature;
+namespace Phenogram\Framework\Tests\Feature;
 
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Phenogram\Bindings\Types\Update;
-use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
-use Shanginn\TelegramBotApiFramework\TelegramBot;
-use Shanginn\TelegramBotApiFramework\Tests\Mock\MockTelegramBotApiClient;
-use Shanginn\TelegramBotApiFramework\Tests\TestCase;
+use Phenogram\Framework\Handler\UpdateHandlerInterface;
+use Phenogram\Framework\TelegramBot;
+use Phenogram\Framework\Tests\Mock\MockTelegramBotApiClient;
+use Phenogram\Framework\Tests\TestCase;
 
 use function React\Async\await;
 

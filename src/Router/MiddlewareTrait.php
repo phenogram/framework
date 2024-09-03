@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Router;
+namespace Phenogram\Framework\Router;
 
-use Shanginn\TelegramBotApiFramework\Middleware\MiddlewareInterface;
+use Phenogram\Framework\Middleware\MiddlewareInterface;
 
 /**
  * Provides ability to manage set of middleware.

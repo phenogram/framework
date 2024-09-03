@@ -1,6 +1,6 @@
 <?php
 
-namespace Shanginn\TelegramBotApiFramework\Command;
+namespace Phenogram\Framework\Command;
 
 class TelegramBotCommand
 {

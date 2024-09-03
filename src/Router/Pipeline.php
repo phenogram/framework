@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Router;
+namespace Phenogram\Framework\Router;
 
 use Phenogram\Bindings\Types\Update;
-use Shanginn\TelegramBotApiFramework\Exception\PipelineException;
-use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
-use Shanginn\TelegramBotApiFramework\Middleware\MiddlewareInterface;
-use Shanginn\TelegramBotApiFramework\TelegramBot;
+use Phenogram\Framework\Exception\PipelineException;
+use Phenogram\Framework\Handler\UpdateHandlerInterface;
+use Phenogram\Framework\Middleware\MiddlewareInterface;
+use Phenogram\Framework\TelegramBot;
 
 /**
  * Pipeline used to pass request and response thought the chain of middleware.

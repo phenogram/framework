@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Tests\Unit;
+namespace Phenogram\Framework\Tests\Unit;
 
 use Phenogram\Bindings\Serializer;
 use Phenogram\Bindings\Types\InlineKeyboardButton;
 use Phenogram\Bindings\Types\InlineKeyboardMarkup;
-use Shanginn\TelegramBotApiFramework\Tests\TestCase;
+use Phenogram\Framework\Tests\TestCase;
 
 final class ReplyMarkupTest extends TestCase
 {

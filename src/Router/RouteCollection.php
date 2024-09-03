@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Router;
+namespace Phenogram\Framework\Router;
 
-use Shanginn\TelegramBotApiFramework\Interface\RouteInterface;
+use Phenogram\Framework\Interface\RouteInterface;
 
 /**
  * @implements \IteratorAggregate<RouteInterface>

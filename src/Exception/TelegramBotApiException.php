@@ -1,6 +1,6 @@
 <?php
 
-namespace Shanginn\TelegramBotApiFramework\Exception;
+namespace Phenogram\Framework\Exception;
 
 class TelegramBotApiException extends PhenogramException
 {

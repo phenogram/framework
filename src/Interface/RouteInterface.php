@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Interface;
+namespace Phenogram\Framework\Interface;
 
 use Phenogram\Bindings\Types\Update;
-use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
+use Phenogram\Framework\Handler\UpdateHandlerInterface;
 
 interface RouteInterface
 {

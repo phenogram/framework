@@ -1,9 +1,9 @@
 <?php
 
-namespace Shanginn\TelegramBotApiFramework\Handler;
+namespace Phenogram\Framework\Handler;
 
 use Phenogram\Bindings\Types\Update;
-use Shanginn\TelegramBotApiFramework\Interface\RouteInterface;
+use Phenogram\Framework\Interface\RouteInterface;
 
 class CommandHandler extends AbstractCommandHandler implements RouteInterface
 {

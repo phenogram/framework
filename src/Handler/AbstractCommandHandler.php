@@ -1,6 +1,6 @@
 <?php
 
-namespace Shanginn\TelegramBotApiFramework\Handler;
+namespace Phenogram\Framework\Handler;
 
 use Phenogram\Bindings\Types\MessageEntity;
 use Phenogram\Bindings\Types\Update;

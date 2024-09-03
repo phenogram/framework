@@ -1,6 +1,6 @@
 <?php
 
-namespace Shanginn\TelegramBotApiFramework\Tests\Mock;
+namespace Phenogram\Framework\Tests\Mock;
 
 use Phenogram\Bindings\ClientInterface;
 use React\Promise\Promise;

@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Router;
+namespace Phenogram\Framework\Router;
 
 use Phenogram\Bindings\Types\Update;
+use Phenogram\Framework\Exception\RouteException;
+use Phenogram\Framework\Handler\CallableHandler;
+use Phenogram\Framework\Handler\UpdateHandlerInterface;
+use Phenogram\Framework\Interface\RouteInterface;
+use Phenogram\Framework\Middleware\CallableMiddleware;
+use Phenogram\Framework\Middleware\MiddlewareInterface;
+use Phenogram\Framework\Trait\ContainerTrait;
 use Psr\Container\ContainerExceptionInterface;
-use Shanginn\TelegramBotApiFramework\Exception\RouteException;
-use Shanginn\TelegramBotApiFramework\Handler\CallableHandler;
-use Shanginn\TelegramBotApiFramework\Handler\UpdateHandlerInterface;
-use Shanginn\TelegramBotApiFramework\Interface\RouteInterface;
-use Shanginn\TelegramBotApiFramework\Middleware\CallableMiddleware;
-use Shanginn\TelegramBotApiFramework\Middleware\MiddlewareInterface;
-use Shanginn\TelegramBotApiFramework\Trait\ContainerTrait;
 
 final class Router
 {

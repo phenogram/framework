@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Command;
+namespace Phenogram\Framework\Command;
 
 use Doctrine\Common\Annotations\Annotation\Attribute;
 use Doctrine\Common\Annotations\Annotation\Attributes;

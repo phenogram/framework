@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Shanginn\TelegramBotApiFramework\Trait;
+namespace Phenogram\Framework\Trait;
 
 use Psr\Container\ContainerInterface;
 
