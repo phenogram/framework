@@ -3,9 +3,8 @@
 namespace Phenogram\Framework\Tests\Mock;
 
 use Phenogram\Bindings\ClientInterface;
-use React\Promise\Promise;
-use React\Promise\PromiseInterface;
-use React\Promise\Timer;
+
+use function Amp\delay;
 
 class MockTelegramBotApiClient implements ClientInterface
 {
@@ -45,12 +44,10 @@ class MockTelegramBotApiClient implements ClientInterface
         return array_shift($this->responses[$key]);
     }
 
-    public function sendRequest(string $method, string $json): PromiseInterface
+    public function sendRequest(string $method, string $json): string
     {
-        return Timer\sleep($this->responseTimeout)->then(
-            fn () => new Promise(
-                fn ($resolve, $reject) => $resolve($this->getResponse($method))
-            )
-        );
+        delay($this->responseTimeout);
+
+        return $this->getResponse($method);
     }
 }

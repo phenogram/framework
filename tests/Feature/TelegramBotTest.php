@@ -12,8 +12,6 @@ use Phenogram\Framework\TelegramBot;
 use Phenogram\Framework\Tests\Mock\MockTelegramBotApiClient;
 use Phenogram\Framework\Tests\TestCase;
 
-use function React\Async\await;
-
 final class TelegramBotTest extends TestCase
 {
     public function testUpdateHandlersAreWorkingInPulling()
@@ -50,10 +48,6 @@ final class TelegramBotTest extends TestCase
 
                 public function handle(Update $update, TelegramBot $bot)
                 {
-                    await(
-                        \React\Promise\Timer\sleep(0.5),
-                    );
-
                     ++$this->counter;
 
                     $bot->stop();
@@ -101,7 +95,7 @@ final class TelegramBotTest extends TestCase
 
     public function testExceptionInUpdateHandlerIsCaught()
     {
-        self::markTestIncomplete('This test is not working as expected. Event loop is not stopping');
+        //        self::markTestIncomplete('This test is not working as expected. Event loop is not stopping');
 
         $logger = new Logger('test', [
             new StreamHandler('php://stdout'),
