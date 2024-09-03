@@ -2,7 +2,7 @@
     "name": "phenogram/framework",
     "description": "Telegram bot API framework",
     "type": "library",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "license": "MIT",
     "autoload": {
         "psr-4": {
@@ -25,18 +25,15 @@
         "psr/log": "^3.0",
         "psr-discovery/log-implementations": "^1.0",
         "psr/http-factory": "^1.0",
-        "react/event-loop": "^1.4",
-        "react/promise": "^3",
-        "react/async": "^4.1",
-        "react/promise-timer": "^1.10",
-        "react/http": "^1.9",
         "psr/container": "^2.0",
-        "phenogram/bindings": "^1.0"
+        "phenogram/bindings": "^2",
+        "amphp/amp": "^3.0",
+        "amphp/http-client": "^5.1"
     },
     "require-dev": {
-        "symfony/var-dumper": "^6.3",
-        "vlucas/phpdotenv": "^5.5",
-        "monolog/monolog": "^3.4",
+        "symfony/var-dumper": "^7",
+        "vlucas/phpdotenv": "^5",
+        "monolog/monolog": "^3",
         "phpunit/phpunit": "^11"
     },
     "minimum-stability": "stable",

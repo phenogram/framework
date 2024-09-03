@@ -2,6 +2,8 @@
 
 namespace Phenogram\Framework;
 
+use Amp\Future;
+use Amp\TimeoutCancellation;
 use Phenogram\Bindings\Api;
 use Phenogram\Bindings\ClientInterface;
 use Phenogram\Bindings\Serializer;
@@ -16,14 +18,10 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use PsrDiscovery\Discover;
-use React\EventLoop\Loop;
-use React\Promise\PromiseInterface;
-use React\Promise\Timer;
 
-use function React\Async\async;
-use function React\Async\await;
-use function React\Async\parallel;
-use function React\Promise\all;
+use function Amp\async;
+use function Amp\delay;
+use function Amp\Future\awaitAll;
 
 class TelegramBot implements ContainerizedInterface
 {
@@ -38,14 +36,15 @@ class TelegramBot implements ContainerizedInterface
 
     private LoggerInterface $logger;
 
-    /**
-     * @var array<PromiseInterface>
-     */
-    private array $promises = [];
-
-    private ?PromiseInterface $pullUpdatesPromise = null;
+    private ?BotStatus $status = null;
+    private ?Future $pullUpdatesFuture = null;
 
     private Router $router;
+
+    /**
+     * @var array<Future>
+     */
+    private array $tasks = [];
 
     public function __construct(
         protected readonly string $token,
@@ -87,6 +86,8 @@ class TelegramBot implements ContainerizedInterface
         $offset = $offset ?? 1;
         $timeout = $timeout ?? 15;
 
+        $this->status = BotStatus::starting;
+
         $this->logger->info(sprintf(
             'Starting bot with offset %d, limit %d, timeout %d',
             $offset,
@@ -94,44 +95,41 @@ class TelegramBot implements ContainerizedInterface
             $timeout,
         ));
 
-        $this->pullUpdatesPromise = $this->pullUpdates(
-            offset: $offset,
-            limit: $limit,
-            timeout: $timeout,
-            allowedUpdates: $allowedUpdates,
-        );
+        foreach ($this->pullUpdates($offset, $limit, $timeout, $allowedUpdates) as $update) {
+            $this->tasks[$update->updateId] = async(function () use ($update) {
+                [$exceptions] = awaitAll($this->handleUpdate($update));
 
-        Loop::run();
+                if (!empty($exceptions)) {
+                    $this->logger->error('Error while handling update', [
+                        'update' => $update,
+                        'exceptions' => $exceptions,
+                    ]);
+                }
+
+                unset($this->tasks[$update->updateId]);
+            });
+        }
     }
 
     public function stop(float $timeout = null): void
     {
         $this->logger->info('Stopping bot');
 
-        $this->logger->info(sprintf(
-            'Waiting for pending promises%s',
-            $timeout !== null ? sprintf(' for %d seconds', $timeout) : '',
-        ));
+        $this->status = BotStatus::stopping;
 
         if ($timeout !== null) {
-            $waitingPromise = Timer\timeout(all($this->promises), $timeout);
-        } else {
-            $waitingPromise = all($this->promises);
+            $this->logger->info(sprintf('Waiting for %d seconds before stopping', $timeout));
         }
 
-        $waitingPromise->then(
-            fn () => Loop::stop(),
-            function (\Throwable $e) {
-                $this->logger->error(sprintf(
-                    'Error while waiting for pending promises: %s',
-                    $e->getMessage(),
-                ), [
-                    'error' => $e,
-                ]);
+        [$exceptions] = awaitAll($this->tasks, new TimeoutCancellation($timeout));
 
-                Loop::stop();
-            }
-        );
+        if (count($exceptions) > 0) {
+            $this->logger->error('Error while stopping bot', [
+                'exceptions' => $exceptions,
+            ]);
+        }
+
+        $this->status = BotStatus::stopped;
     }
 
     private function pullUpdates(
@@ -139,85 +137,53 @@ class TelegramBot implements ContainerizedInterface
         ?int $limit,
         int $timeout,
         ?array $allowedUpdates,
-    ): PromiseInterface {
-        $this->logger->debug('Polling updates', [
-            'offset' => $offset,
-            'limit' => $limit,
-            'allowedUpdates' => $allowedUpdates,
-            'timeout' => $timeout,
-        ]);
+    ): \Generator {
+        $this->status = BotStatus::started;
 
-        try {
-            $updates = await($this->api->getUpdates(
-                offset: $offset,
-                limit: $limit,
-                allowedUpdates: $allowedUpdates,
-            ));
-        } catch (\Throwable $e) {
-            $waitTime = 5;
-
-            $this->logger->error(sprintf(
-                'Error while pooling updates %s. Waiting for %d seconds until next pull',
-                $e->getMessage(),
-                $waitTime,
-            ), [
-                'error' => $e,
+        while ($this->status !== BotStatus::stopping) {
+            $this->logger->debug('Polling updates', [
+                'offset' => $offset,
+                'limit' => $limit,
+                'allowedUpdates' => $allowedUpdates,
+                'timeout' => $timeout,
             ]);
 
             try {
-                await(Timer\sleep($waitTime));
+                $updates = $this->api->getUpdates(
+                    offset: $offset,
+                    limit: $limit,
+                    allowedUpdates: $allowedUpdates,
+                );
             } catch (\Throwable $e) {
+                $waitTime = 5;
+
                 $this->logger->error(sprintf(
-                    'Error while waiting for next pull: %s',
+                    'Error while pooling updates %s. Waiting for %d seconds until next pull',
                     $e->getMessage(),
+                    $waitTime,
                 ), [
                     'error' => $e,
                 ]);
+
+                delay($waitTime);
+
+                continue;
             }
 
-            return $this->pullUpdates($offset, $limit, $timeout, $allowedUpdates);
-        }
+            $this->logger->debug('Got updates', [
+                'updates' => $updates,
+            ]);
 
-        $this->logger->debug('Got updates', [
-            'updates' => $updates,
-        ]);
-
-        $tasks = [];
-
-        $offset = array_reduce(
-            $updates,
-            fn ($max, $update) => max($max, $update->updateId + 1),
-            $offset
-        );
-
-        $pullUpdatesPromise = async(
-            fn () => $this->pullUpdates($offset, $limit, $timeout, $allowedUpdates)
-        )();
-
-        /** @var Update $update */
-        foreach ($updates as $update) {
-            $tasks[] = $this->promises[$update->updateId] = async(
-                fn () => $this
-                    ->handleUpdate($update)
-                    ->then(
-                        null,
-                        function (\Throwable $e) {
-                            $this->logger->error(sprintf(
-                                'Error while handling updates: %s.',
-                                $e->getMessage(),
-                            ), [
-                                'error' => $e,
-                            ]);
-                        }
-                    )
-                    ->then(function () use ($update) {
-                        unset($this->promises[$update->updateId]);
-                    })
+            $offset = array_reduce(
+                $updates,
+                fn ($max, $update) => max($max, $update->updateId + 1),
+                $offset
             );
-        }
 
-        return parallel($tasks)
-            ->then(fn () => $pullUpdatesPromise);
+            foreach ($updates as $update) {
+                yield $update;
+            }
+        }
     }
 
     public function addHandler(UpdateHandlerInterface|\Closure|string $handler): RouteConfigurator
@@ -231,9 +197,9 @@ class TelegramBot implements ContainerizedInterface
     }
 
     /**
-     * @return PromiseInterface<array<mixed>>
+     * @return array<Future>
      */
-    public function handleUpdate(Update $update): PromiseInterface
+    public function handleUpdate(Update $update): array
     {
         $tasks = [];
 
@@ -241,6 +207,6 @@ class TelegramBot implements ContainerizedInterface
             $tasks[] = async(fn () => $handler->handle($update, $this));
         }
 
-        return parallel($tasks);
+        return $tasks;
     }
 }
