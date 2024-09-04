@@ -4,17 +4,14 @@ namespace Phenogram\Framework;
 
 use Amp\Http\Client\HttpClient;
 use Amp\Http\Client\HttpClientBuilder;
+use Amp\Http\Client\HttpException;
 use Amp\Http\Client\Request;
-use Amp\Http\Client\Response;
 use Phenogram\Bindings\ClientInterface;
+use Phenogram\Bindings\Types;
 use Phenogram\Framework\Exception\TelegramBotApiException;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use PsrDiscovery\Discover;
-use React\Http\Message\ResponseException;
-
-use function React\Promise\reject;
 
 final class TelegramBotApiClient implements ClientInterface
 {
@@ -31,113 +28,81 @@ final class TelegramBotApiClient implements ClientInterface
         $this->logger = $logger ?? Discover::log() ?? new NullLogger();
     }
 
-    public function sendRequest(string $method, string $json): string
+    public function sendRequest(string $method, string $json): Types\Response
     {
-        $url = "{$this->apiUrl}/bot{$this->token}/{$method}";
-
         $this->logger->debug("Request [$method]", [
             'json' => $json,
         ]);
 
-        $request = new Request(uri: $url, method: 'POST', body: $json);
+        $request = new Request(
+            uri: "{$this->apiUrl}/bot{$this->token}/{$method}",
+            method: 'POST',
+            body: $json
+        );
+
         $request->setHeader('Content-Type', 'application/json');
 
-        $response = $this->client->request($request);
+        try {
+            $response = $this->client->request($request);
+        } catch (HttpException $e) {
+            $message = sprintf(
+                'Request [%s] failed: %s',
+                $method,
+                $e->getMessage()
+            );
+
+            $this->logger->error($message);
+
+            throw new TelegramBotApiException($message);
+        }
 
         $responseContent = $response->getBody()->buffer();
-        $responseData = $this->decodeJson($responseContent, $method);
+
+        try {
+            $responseData = json_decode(
+                json: $responseContent,
+                associative: true,
+                flags: JSON_THROW_ON_ERROR
+            );
+        } catch (\JsonException $e) {
+            $message = sprintf(
+                'Response [%s] is not json: %s. Error: %s',
+                $method,
+                $json,
+                $e->getMessage()
+            );
+
+            $this->logger->error($message);
+
+            throw new TelegramBotApiException($message);
+        }
 
         $this->logger->debug("Response [$method]", [
             'response' => $responseData,
         ]);
 
-        if (!isset($responseData['ok'], $responseData['result']) || !$responseData['ok']) {
-            $this->logger->error(sprintf(
-                'Response [%s] is not ok: %s',
-                $method,
-                $responseContent
-            ));
-
-            throw new TelegramBotApiException(sprintf('Response [%s] is not ok: %s', $method, $responseData['description'] ?? 'Unknown error'));
-        }
-
-        return json_encode($responseData['result']);
-
-        //        return $this
-        //            ->postJson($url, $json)
-        //            ->then(
-        //                function (ResponseInterface $response) use ($method) {
-        //                    $responseContent = $response->getBody()->getContents();
-        //                    $responseData = $this->decodeJson($responseContent, $method);
-        //
-        //                    $this->logger->debug("Response [$method]", [
-        //                        'response' => $responseData,
-        //                    ]);
-        //
-        //                    if (!isset($responseData['ok'], $responseData['result']) || !$responseData['ok']) {
-        //                        $this->logger->error(sprintf(
-        //                            'Response [%s] is not ok: %s',
-        //                            $method,
-        //                            $responseContent
-        //                        ));
-        //
-        //                        return reject(new TelegramBotApiException(sprintf(
-        //                            'Response [%s] is not ok: %s',
-        //                            $method,
-        //                            $responseData['description'] ?? 'Unknown error'
-        //                        )));
-        //                    }
-        //
-        //                    return json_encode($responseData['result']);
-        //                },
-        //                function (\Throwable $e) use ($method) {
-        //                    $context = [];
-        //                    $errorMessage = sprintf(
-        //                        'Request [%s] failed (%s)',
-        //                        $method,
-        //                        $e->getMessage()
-        //                    );
-        //
-        //                    if ($e instanceof ResponseException) {
-        //                        $response = $e->getResponse();
-        //                        $responseContent = $response->getBody()->getContents();
-        //                        $responseData = $this->decodeJson($responseContent, $method);
-        //
-        //                        $this->logger->debug("Response [$method]", [
-        //                            'response' => $responseData,
-        //                        ]);
-        //
-        //                        $errorMessage .= ': ' . $responseData['description'] ?? 'Unknown error';
-        //                        $context = $responseData;
-        //                    }
-        //
-        //                    $this->logger->error(sprintf(
-        //                        'Request [%s] failed (%s)',
-        //                        $method,
-        //                        $e->getMessage()
-        //                    ), $context);
-        //
-        //                    return reject(new TelegramBotApiException($errorMessage));
-        //                }
-        //            );
-    }
-
-    private function decodeJson(string $json, string $method): array
-    {
-        try {
-            return json_decode(
-                json: $json,
-                associative: true,
-                flags: JSON_THROW_ON_ERROR
+        if (!isset($responseData['ok']) || !isset($responseData['result'])) {
+            return new Types\Response(
+                ok: false,
+                result: null,
+                errorCode: $responseData['error_code'] ?? null,
+                description: $responseData['description'] ?? null,
+                parameters: isset($responseData['parameters']) ? new Types\ResponseParameters(
+                    migrateToChatId: $responseData['parameters']['migrate_to_chat_id'] ?? null,
+                    retryAfter: $responseData['parameters']['retry_after'] ?? null,
+                ) : null,
             );
-        } catch (\JsonException $e) {
-            $this->logger->error(sprintf(
-                'Response [%s] is not json: %s',
-                $method,
-                $json
-            ));
-
-            throw new TelegramBotApiException(sprintf('Response [%s] is not json: %s', $method, $json));
         }
+
+        return new Types\Response(
+            ok: $responseData['ok'],
+            result: json_encode($responseData['result']),
+            errorCode: $responseData['error_code'] ?? null,
+            description: $responseData['description'] ?? null,
+            parameters: isset($responseData['parameters']) ? new Types\ResponseParameters(
+                migrateToChatId: $responseData['parameters']['migrate_to_chat_id'] ?? null,
+                retryAfter: $responseData['parameters']['retry_after'] ?? null,
+            ) : null,
+        );
     }
 }

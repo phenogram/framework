@@ -2,7 +2,7 @@
     "name": "phenogram/framework",
     "description": "Telegram bot API framework",
     "type": "library",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "license": "MIT",
     "autoload": {
         "psr-4": {
@@ -26,7 +26,7 @@
         "psr-discovery/log-implementations": "^1.0",
         "psr/http-factory": "^1.0",
         "psr/container": "^2.0",
-        "phenogram/bindings": "^2",
+        "phenogram/bindings": "^2.1",
         "amphp/amp": "^3.0",
         "amphp/http-client": "^5.1"
     },

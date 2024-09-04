@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "027ef0c127af14629ee5c078296b8589",
+    "content-hash": "218c062f0a3db5ad39c68f467cac5295",
     "packages": [
         {
             "name": "amphp/amp",
@@ -1455,16 +1455,16 @@
         },
         {
             "name": "phenogram/bindings",
-            "version": "2.0.1",
+            "version": "2.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phenogram/bindings.git",
-                "reference": "5c24d28b9985042f1c7c00cc3301f6986a4455c3"
+                "reference": "449b709d82528eeaf957050d411c62121eda49e2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phenogram/bindings/zipball/5c24d28b9985042f1c7c00cc3301f6986a4455c3",
-                "reference": "5c24d28b9985042f1c7c00cc3301f6986a4455c3",
+                "url": "https://api.github.com/repos/phenogram/bindings/zipball/449b709d82528eeaf957050d411c62121eda49e2",
+                "reference": "449b709d82528eeaf957050d411c62121eda49e2",
                 "shasum": ""
             },
             "require": {
@@ -1495,9 +1495,9 @@
             "description": "Low level type-safe PHP bindings for the Telegram Bot API",
             "support": {
                 "issues": "https://github.com/phenogram/bindings/issues",
-                "source": "https://github.com/phenogram/bindings/tree/2.0.1"
+                "source": "https://github.com/phenogram/bindings/tree/2.3.0"
             },
-            "time": "2024-09-03T15:13:19+00:00"
+            "time": "2024-09-04T15:29:28+00:00"
         },
         {
             "name": "psr-discovery/discovery",
@@ -2735,16 +2735,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "11.3.2",
+            "version": "11.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "8a4de85cc4a78c59dd31cc4ef454b0029f8440dc"
+                "reference": "8ed08766d9a2ed979a2f5fdbb95a0671523419c1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/8a4de85cc4a78c59dd31cc4ef454b0029f8440dc",
-                "reference": "8a4de85cc4a78c59dd31cc4ef454b0029f8440dc",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/8ed08766d9a2ed979a2f5fdbb95a0671523419c1",
+                "reference": "8ed08766d9a2ed979a2f5fdbb95a0671523419c1",
                 "shasum": ""
             },
             "require": {
@@ -2815,7 +2815,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.3.2"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.3.3"
             },
             "funding": [
                 {
@@ -2831,7 +2831,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-09-03T12:00:26+00:00"
+            "time": "2024-09-04T13:34:52+00:00"
         },
         {
             "name": "sebastian/cli-parser",
