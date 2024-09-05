@@ -12,6 +12,9 @@ use Phenogram\Framework\TelegramBot;
 use Phenogram\Framework\Tests\Mock\MockTelegramBotApiClient;
 use Phenogram\Framework\Tests\TestCase;
 
+use function Amp\delay;
+use function Amp\Future\await;
+
 final class TelegramBotTest extends TestCase
 {
     public function testUpdateHandlersAreWorkingInPulling()
@@ -60,43 +63,55 @@ final class TelegramBotTest extends TestCase
         $this->assertEquals(1, $counter);
     }
 
-    //    public function testCanHandleSingleUpdateWithoutEventLoop()
-    //    {
-    //        $bot = new TelegramBot(
-    //            token: 'token',
-    //        );
-    //
-    //        $counter = 0;
-    //
-    //        $bot->addHandler(
-    //            new class($counter) implements UpdateHandlerInterface {
-    //                public function __construct(
-    //                    private int &$counter
-    //                ) {
-    //                }
-    //
-    //                public function handle(Update $update, TelegramBot $bot): void
-    //                {
-    //                    await(\React\Promise\Timer\sleep(1));
-    //
-    //                    ++$this->counter;
-    //                }
-    //            }
-    //        );
-    //
-    //        $bot->handleUpdateSync(
-    //            new Update(
-    //                updateId: 1,
-    //            )
-    //        );
-    //
-    //        $this->assertEquals(1, $counter);
-    //    }
+    public function testCanHandleSingleUpdateWithoutEventLoop()
+    {
+        $bot = new TelegramBot(
+            token: 'token',
+        );
+
+        $counter = 0;
+
+        $bot->addHandler(function () use (&$counter) {
+            delay(1);
+
+            ++$counter;
+        });
+
+        $bot->handleUpdate(
+            new Update(
+                updateId: 1,
+            )
+        )[0]->await();
+
+        $this->assertEquals(1, $counter);
+    }
+
+    public function test1000UpdateHandlersInParallel()
+    {
+        $bot = new TelegramBot(
+            token: 'token',
+        );
+
+        $counter = 0;
+        foreach (range(1, 1000) as $i) {
+            $bot->addHandler(function () use (&$counter) {
+                delay(1);
+
+                ++$counter;
+            });
+        }
+
+        await($bot->handleUpdate(
+            new Update(
+                updateId: 1,
+            )
+        ));
+
+        $this->assertEquals(1000, $counter);
+    }
 
     public function testExceptionInUpdateHandlerIsCaught()
     {
-        //        self::markTestIncomplete('This test is not working as expected. Event loop is not stopping');
-
         $logger = new Logger('test', [
             new StreamHandler('php://stdout'),
         ]);
