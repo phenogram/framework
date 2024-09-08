@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "218c062f0a3db5ad39c68f467cac5295",
+    "content-hash": "b5dd2875b2adc5095ef07cdea93a381b",
     "packages": [
         {
             "name": "amphp/amp",
@@ -1455,16 +1455,16 @@
         },
         {
             "name": "phenogram/bindings",
-            "version": "2.3.0",
+            "version": "2.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phenogram/bindings.git",
-                "reference": "449b709d82528eeaf957050d411c62121eda49e2"
+                "reference": "9e746583bd49fab693bab9ee3395318c3e5c6aae"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phenogram/bindings/zipball/449b709d82528eeaf957050d411c62121eda49e2",
-                "reference": "449b709d82528eeaf957050d411c62121eda49e2",
+                "url": "https://api.github.com/repos/phenogram/bindings/zipball/9e746583bd49fab693bab9ee3395318c3e5c6aae",
+                "reference": "9e746583bd49fab693bab9ee3395318c3e5c6aae",
                 "shasum": ""
             },
             "require": {
@@ -1495,9 +1495,9 @@
             "description": "Low level type-safe PHP bindings for the Telegram Bot API",
             "support": {
                 "issues": "https://github.com/phenogram/bindings/issues",
-                "source": "https://github.com/phenogram/bindings/tree/2.3.0"
+                "source": "https://github.com/phenogram/bindings/tree/2.4.0"
             },
-            "time": "2024-09-04T15:29:28+00:00"
+            "time": "2024-09-08T08:10:11+00:00"
         },
         {
             "name": "psr-discovery/discovery",
