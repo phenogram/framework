@@ -61,23 +61,15 @@ abstract class AbstractCommandHandler implements UpdateHandlerInterface
 
     protected static function hasCommand(Update $update, string $command): bool
     {
-        $message = $update->message;
-
-        if ($message === null || $message->entities === null || $message->text === null) {
-            return false;
-        }
-
-        $commands = self::extractCommands(
-            entities: $message->entities,
-            text: $message->text
-        );
-
-        foreach ($commands as $commandStr) {
-            if ($commandStr === $command) {
-                return true;
-            }
-        }
-
-        return false;
+        return $update->message?->entities !== null
+            && $update->message->text !== null
+            && in_array(
+                $command,
+                self::extractCommands(
+                    entities: $update->message->entities,
+                    text: $update->message->text
+                ),
+                strict: true
+            );
     }
 }

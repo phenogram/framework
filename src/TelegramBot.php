@@ -5,12 +5,13 @@ namespace Phenogram\Framework;
 use Amp\Future;
 use Amp\TimeoutCancellation;
 use Phenogram\Bindings\Api;
-use Phenogram\Bindings\ClientInterface;
+use Phenogram\Bindings\ApiInterface;
 use Phenogram\Bindings\Serializer;
-use Phenogram\Bindings\SerializerInterface;
 use Phenogram\Bindings\Types\Update;
+use Phenogram\Bindings\Types\UpdateType;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\ContainerizedInterface;
+use Phenogram\Framework\Interface\RouteInterface;
 use Phenogram\Framework\Router\RouteConfigurator;
 use Phenogram\Framework\Router\Router;
 use Phenogram\Framework\Trait\ContainerTrait;
@@ -48,15 +49,14 @@ class TelegramBot implements ContainerizedInterface
 
     public function __construct(
         protected readonly string $token,
-        ClientInterface $botClient = null,
-        SerializerInterface $serializer = null,
+        ApiInterface $api = null,
         LoggerInterface $logger = null,
     ) {
         $this->logger = $logger ?? Discover::log() ?? new NullLogger();
 
-        $this->api = new Api(
-            client: $botClient ?? new TelegramBotApiClient($token),
-            serializer: $serializer ?? new Serializer(),
+        $this->api = $api ?? new Api(
+            client: new TelegramBotApiClient($token),
+            serializer: new Serializer(),
         );
 
         $this->router = new Router();
@@ -77,6 +77,9 @@ class TelegramBot implements ContainerizedInterface
         return $this->token;
     }
 
+    /**
+     * @param array<UpdateType>|null $allowedUpdates
+     */
     public function run(
         int $offset = null,
         ?int $limit = 100,
@@ -102,8 +105,13 @@ class TelegramBot implements ContainerizedInterface
                 if (!empty($exceptions)) {
                     $this->logger->error('Error while handling update', [
                         'update' => $update,
-                        'exceptions' => $exceptions,
+                        'exceptions' => array_map(
+                            fn (\Throwable $e) => $e->getMessage(),
+                            $exceptions
+                        ),
                     ]);
+
+                    dump($exceptions);
                 }
 
                 unset($this->tasks[$update->updateId]);
@@ -132,6 +140,9 @@ class TelegramBot implements ContainerizedInterface
         $this->status = BotStatus::stopped;
     }
 
+    /**
+     * @param array<UpdateType>|null $allowedUpdates
+     */
     private function pullUpdates(
         int $offset,
         ?int $limit,
@@ -139,6 +150,13 @@ class TelegramBot implements ContainerizedInterface
         ?array $allowedUpdates,
     ): \Generator {
         $this->status = BotStatus::started;
+
+        if ($allowedUpdates !== null) {
+            $allowedUpdates = array_map(
+                fn (UpdateType $type) => $type->value,
+                $allowedUpdates
+            );
+        }
 
         while ($this->status !== BotStatus::stopping) {
             $this->logger->debug('Polling updates', [
@@ -194,6 +212,11 @@ class TelegramBot implements ContainerizedInterface
     public function addRoute(): RouteConfigurator
     {
         return $this->router->add();
+    }
+
+    public function registerRoute(RouteInterface $route): void
+    {
+        $this->router->register($route);
     }
 
     /**

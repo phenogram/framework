@@ -79,7 +79,7 @@ final class RouteConfigurator
         return $this;
     }
 
-    public function middleware(MiddlewareInterface|string|callable|array $middleware): self
+    public function middleware(MiddlewareInterface|string|callable ...$middleware): self
     {
         if (!\is_array($middleware)) {
             $middleware = [$middleware];

@@ -4,10 +4,11 @@ namespace Phenogram\Framework\Handler;
 
 use Phenogram\Bindings\Types\Update;
 use Phenogram\Framework\Interface\RouteInterface;
+use Phenogram\Framework\TelegramBot;
 
 class CommandHandler extends AbstractCommandHandler implements RouteInterface
 {
-    use CommandCallbackHandlerTrait;
+    protected UpdateHandlerInterface $handler;
 
     public function __construct(
         protected readonly string $command,
@@ -15,26 +16,22 @@ class CommandHandler extends AbstractCommandHandler implements RouteInterface
         protected readonly ?string $description = null,
         protected readonly ?string $usage = null,
     ) {
-        $this->callback = $callback;
-
-        $this->validateCallback();
+        $this->handler = new CallableHandler($callback);
     }
 
     public function supports(Update $update): bool
     {
-        return $update->message?->entities !== null
-            && $update->message->text !== null
-            && in_array(
-                $this->command,
-                self::extractCommands(
-                    $update->message->entities,
-                    $update->message->text
-                )
-            );
+        return self::hasCommand($update, $this->command);
     }
 
+    // TODO: хммм... и getHandler() и handle(). Нужны оба?
     public function getHandler(): UpdateHandlerInterface
     {
-        return $this;
+        return $this->handler;
+    }
+
+    public function handle(Update $update, TelegramBot $bot)
+    {
+        $this->handler->handle($update, $bot);
     }
 }
