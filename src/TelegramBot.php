@@ -19,6 +19,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use PsrDiscovery\Discover;
+use Revolt\EventLoop;
 
 use function Amp\async;
 use function Amp\delay;
@@ -41,6 +42,8 @@ class TelegramBot implements ContainerizedInterface
     private ?Future $pullUpdatesFuture = null;
 
     private Router $router;
+
+    private ?\Closure $errorHandler = null;
 
     /**
      * @var array<Future>
@@ -65,9 +68,17 @@ class TelegramBot implements ContainerizedInterface
     public function withContainer(ContainerInterface $container): self
     {
         $self = clone $this;
-        $self->container = $container;
 
+        $self->container = $container;
         $self->router = $this->router->withContainer($container);
+
+        return $self;
+    }
+
+    public function withErrorHandler(\Closure $errorHandler): self
+    {
+        $self = clone $this;
+        $self->errorHandler = $errorHandler;
 
         return $self;
     }
@@ -119,17 +130,19 @@ class TelegramBot implements ContainerizedInterface
         }
     }
 
-    public function stop(float $timeout = null): void
+    public function stop(float $timeout = 0.0): void
     {
         $this->logger->info('Stopping bot');
 
         $this->status = BotStatus::stopping;
 
-        if ($timeout !== null) {
+        if ($timeout !== 0.0) {
             $this->logger->info(sprintf('Waiting for %d seconds before stopping', $timeout));
         }
 
-        [$exceptions] = awaitAll($this->tasks, new TimeoutCancellation($timeout));
+        $timeoutTimer = new TimeoutCancellation($timeout);
+
+        [$exceptions] = awaitAll($this->tasks, $timeoutTimer);
 
         if (count($exceptions) > 0) {
             $this->logger->error('Error while stopping bot', [
@@ -142,6 +155,8 @@ class TelegramBot implements ContainerizedInterface
 
     /**
      * @param array<UpdateType>|null $allowedUpdates
+     *
+     * @return \Generator<Update>
      */
     private function pullUpdates(
         int $offset,
@@ -157,6 +172,17 @@ class TelegramBot implements ContainerizedInterface
                 $allowedUpdates
             );
         }
+
+        //        $oldErrorHandler = EventLoop::getErrorHandler();
+        //        $newErrorHandler = function (\Throwable $e) use ($oldErrorHandler) {
+        //            $this->logger->error(
+        //                sprintf('Error in event loop: %s', $e->getMessage()), [
+        //                    'error' => $e,
+        //                ]
+        //            );
+        //        };
+        //
+        //        EventLoop::setErrorHandler($newErrorHandler);
 
         while ($this->status !== BotStatus::stopping) {
             $this->logger->debug('Polling updates', [
@@ -176,14 +202,21 @@ class TelegramBot implements ContainerizedInterface
                 $waitTime = 5;
 
                 $this->logger->error(sprintf(
-                    'Error while pooling updates %s. Waiting for %d seconds until next pull',
+                    'Error while pooling updates: "%s". Waiting for %d seconds until next pull',
                     $e->getMessage(),
                     $waitTime,
                 ), [
                     'error' => $e,
                 ]);
 
-                delay($waitTime);
+                try {
+                    // 🥴 при резком исчезновении интернета в лупе возникает ошибка
+                    // "Stream watcher invoked after stream closed" (Http2ConnectionProcessor.php:1588)
+                    // Может я не правильно использую что-то, но пока так
+                    delay($waitTime);
+                } catch (\Throwable) {
+                    delay($waitTime);
+                }
 
                 continue;
             }
@@ -202,6 +235,8 @@ class TelegramBot implements ContainerizedInterface
                 yield $update;
             }
         }
+
+        //        EventLoop::setErrorHandler($oldErrorHandler);
     }
 
     public function addHandler(UpdateHandlerInterface|\Closure|string $handler): RouteConfigurator

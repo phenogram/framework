@@ -6,6 +6,7 @@ namespace Phenogram\Framework\Tests\Feature;
 
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use Phenogram\Bindings\Api;
 use Phenogram\Bindings\Types\Update;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\TelegramBot;
@@ -37,7 +38,9 @@ final class TelegramBotTest extends TestCase
         $bot = new TelegramBot(
             token: 'token',
             logger: $logger,
-            botClient: $client,
+            api: new Api(
+                client: $client
+            ),
         );
 
         $counter = 0;
@@ -130,7 +133,9 @@ final class TelegramBotTest extends TestCase
         $bot = new TelegramBot(
             token: 'token',
             logger: $logger,
-            botClient: $client,
+            api: new Api(
+                client: $client
+            ),
         );
 
         $counter = 0;
@@ -140,6 +145,7 @@ final class TelegramBotTest extends TestCase
 
             $bot->stop();
         });
+
         $bot->addHandler(fn () => throw new \Exception('test1'));
 
         $bot->run();

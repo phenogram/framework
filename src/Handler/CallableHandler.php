@@ -32,8 +32,8 @@ class CallableHandler implements UpdateHandlerInterface
         }
 
         $reflection = new \ReflectionFunction($this->callable);
-        if ($reflection->getNumberOfParameters() !== 2) {
-            throw new \InvalidArgumentException(sprintf('Callable should match "%s::handle" method signature. It should accept exactly 2 parameters, %d given.', static::class, $reflection->getNumberOfParameters()));
+        if ($reflection->getNumberOfParameters() > 2) {
+            throw new \InvalidArgumentException(sprintf('Callable should be compatible with "%s::handle" method signature. It should accept at most 2 parameters, %d given.', static::class, $reflection->getNumberOfParameters()));
         }
 
         $thisClassReflection = new \ReflectionClass($this);
@@ -43,7 +43,11 @@ class CallableHandler implements UpdateHandlerInterface
         foreach ($handleParameters as $index => $param) {
             $callableParam = $reflection->getParameters()[$index];
 
-            if ($callableParam === null || $param->getName() !== $callableParam->getName()) {
+            if ($callableParam === null) {
+                continue;
+            }
+
+            if ($param->getName() !== $callableParam->getName()) {
                 throw new \InvalidArgumentException(sprintf('CommandHandler callable should match "%s::handle" method signature.Parameter #%d should be named "%s", now it\'s named "%s".', static::class, $index, $param->getName(), $callableParam->getName()));
             }
 
