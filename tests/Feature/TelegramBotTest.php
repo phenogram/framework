@@ -138,7 +138,19 @@ final class TelegramBotTest extends TestCase
             ),
         );
 
+        $customException = new class() extends \Exception {};
+
         $counter = 0;
+
+        $exceptionHandler = function (\Throwable $e) use (&$counter, $logger, $customException) {
+            if ($e->getPrevious() instanceof $customException) {
+                ++$counter;
+            }
+
+            $logger->error($e->getMessage());
+        };
+
+        $bot = $bot->withErrorHandler($exceptionHandler);
 
         $bot->addHandler(function (Update $update, TelegramBot $bot) use (&$counter) {
             ++$counter;
@@ -146,10 +158,10 @@ final class TelegramBotTest extends TestCase
             $bot->stop();
         });
 
-        $bot->addHandler(fn () => throw new \Exception('test1'));
+        $bot->addHandler(fn () => throw new $customException());
 
         $bot->run();
 
-        $this->assertEquals(1, $counter);
+        $this->assertEquals(2, $counter);
     }
 }

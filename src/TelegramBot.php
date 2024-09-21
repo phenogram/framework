@@ -9,6 +9,7 @@ use Phenogram\Bindings\ApiInterface;
 use Phenogram\Bindings\Serializer;
 use Phenogram\Bindings\Types\Update;
 use Phenogram\Bindings\Types\UpdateType;
+use Phenogram\Framework\Exception\PhenogramException;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\ContainerizedInterface;
 use Phenogram\Framework\Interface\RouteInterface;
@@ -43,7 +44,7 @@ class TelegramBot implements ContainerizedInterface
 
     private Router $router;
 
-    private ?\Closure $errorHandler = null;
+    private \Closure $errorHandler;
 
     /**
      * @var array<Future>
@@ -63,6 +64,8 @@ class TelegramBot implements ContainerizedInterface
         );
 
         $this->router = new Router();
+
+        $this->errorHandler = fn (\Throwable $e) => $this->logger->error($e->getMessage());
     }
 
     public function withContainer(ContainerInterface $container): self
@@ -113,16 +116,12 @@ class TelegramBot implements ContainerizedInterface
             $this->tasks[$update->updateId] = async(function () use ($update) {
                 [$exceptions] = awaitAll($this->handleUpdate($update));
 
-                if (!empty($exceptions)) {
-                    $this->logger->error('Error while handling update', [
-                        'update' => $update,
-                        'exceptions' => array_map(
-                            fn (\Throwable $e) => $e->getMessage(),
-                            $exceptions
-                        ),
-                    ]);
-
-                    dump($exceptions);
+                /** @var \Throwable $exception */
+                foreach ($exceptions as $exception) {
+                    ($this->errorHandler)(new PhenogramException(
+                        message: sprintf('Error while handling update: %s', $exception->getMessage()),
+                        previous: $exception,
+                    ));
                 }
 
                 unset($this->tasks[$update->updateId]);
@@ -144,10 +143,12 @@ class TelegramBot implements ContainerizedInterface
 
         [$exceptions] = awaitAll($this->tasks, $timeoutTimer);
 
-        if (count($exceptions) > 0) {
-            $this->logger->error('Error while stopping bot', [
-                'exceptions' => $exceptions,
-            ]);
+        /** @var \Throwable $exception */
+        foreach ($exceptions as $exception) {
+            ($this->errorHandler)(new PhenogramException(
+                message: sprintf('Error while stopping bot: %s', $exception->getMessage()),
+                previous: $exception,
+            ));
         }
 
         $this->status = BotStatus::stopped;
@@ -173,16 +174,8 @@ class TelegramBot implements ContainerizedInterface
             );
         }
 
-        //        $oldErrorHandler = EventLoop::getErrorHandler();
-        //        $newErrorHandler = function (\Throwable $e) use ($oldErrorHandler) {
-        //            $this->logger->error(
-        //                sprintf('Error in event loop: %s', $e->getMessage()), [
-        //                    'error' => $e,
-        //                ]
-        //            );
-        //        };
-        //
-        //        EventLoop::setErrorHandler($newErrorHandler);
+        $oldErrorHandler = EventLoop::getErrorHandler();
+        EventLoop::setErrorHandler($this->errorHandler);
 
         while ($this->status !== BotStatus::stopping) {
             $this->logger->debug('Polling updates', [
@@ -201,13 +194,16 @@ class TelegramBot implements ContainerizedInterface
             } catch (\Throwable $e) {
                 $waitTime = 5;
 
-                $this->logger->error(sprintf(
-                    'Error while pooling updates: "%s". Waiting for %d seconds until next pull',
-                    $e->getMessage(),
-                    $waitTime,
-                ), [
-                    'error' => $e,
-                ]);
+                ($this->errorHandler)(
+                    new PhenogramException(
+                        message: sprintf(
+                            'Error while pooling updates: "%s". Waiting for %d seconds until next pull',
+                            $e->getMessage(),
+                            $waitTime,
+                        ),
+                        previous: $e,
+                    )
+                );
 
                 try {
                     // 🥴 при резком исчезновении интернета в лупе возникает ошибка
@@ -236,7 +232,7 @@ class TelegramBot implements ContainerizedInterface
             }
         }
 
-        //        EventLoop::setErrorHandler($oldErrorHandler);
+        EventLoop::setErrorHandler($oldErrorHandler);
     }
 
     public function addHandler(UpdateHandlerInterface|\Closure|string $handler): RouteConfigurator
