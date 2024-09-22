@@ -91,6 +91,11 @@ class TelegramBot implements ContainerizedInterface
         return $this->token;
     }
 
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger;
+    }
+
     /**
      * @param array<UpdateType>|null $allowedUpdates
      */
@@ -121,7 +126,7 @@ class TelegramBot implements ContainerizedInterface
                     ($this->errorHandler)(new PhenogramException(
                         message: sprintf('Error while handling update: %s', $exception->getMessage()),
                         previous: $exception,
-                    ));
+                    ), $this);
                 }
 
                 unset($this->tasks[$update->updateId]);
@@ -148,7 +153,7 @@ class TelegramBot implements ContainerizedInterface
             ($this->errorHandler)(new PhenogramException(
                 message: sprintf('Error while stopping bot: %s', $exception->getMessage()),
                 previous: $exception,
-            ));
+            ), $this);
         }
 
         $this->status = BotStatus::stopped;
@@ -194,16 +199,14 @@ class TelegramBot implements ContainerizedInterface
             } catch (\Throwable $e) {
                 $waitTime = 5;
 
-                ($this->errorHandler)(
-                    new PhenogramException(
-                        message: sprintf(
-                            'Error while pooling updates: "%s". Waiting for %d seconds until next pull',
-                            $e->getMessage(),
-                            $waitTime,
-                        ),
-                        previous: $e,
-                    )
-                );
+                ($this->errorHandler)(new PhenogramException(
+                    message: sprintf(
+                        'Error while pooling updates: "%s". Waiting for %d seconds until next pull',
+                        $e->getMessage(),
+                        $waitTime,
+                    ),
+                    previous: $e,
+                ), $this);
 
                 try {
                     // 🥴 при резком исчезновении интернета в лупе возникает ошибка
