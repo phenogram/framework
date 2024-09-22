@@ -138,7 +138,9 @@ final class TelegramBotTest extends TestCase
             ),
         );
 
-        $customException = new class() extends \Exception {};
+        $customException = new class() extends \Exception {
+            protected $message = 'Custom exception';
+        };
 
         $counter = 0;
 
@@ -150,7 +152,7 @@ final class TelegramBotTest extends TestCase
             $bot->getLogger()->error($e->getMessage());
         };
 
-        $bot = $bot->withErrorHandler($exceptionHandler);
+        $bot->setErrorHandler($exceptionHandler);
 
         $bot->addHandler(function (Update $update, TelegramBot $bot) use (&$counter) {
             ++$counter;

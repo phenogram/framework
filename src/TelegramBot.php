@@ -10,6 +10,7 @@ use Phenogram\Bindings\Serializer;
 use Phenogram\Bindings\Types\Update;
 use Phenogram\Bindings\Types\UpdateType;
 use Phenogram\Framework\Exception\PhenogramException;
+use Phenogram\Framework\Exception\UpdatePullingException;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\ContainerizedInterface;
 use Phenogram\Framework\Interface\RouteInterface;
@@ -51,6 +52,8 @@ class TelegramBot implements ContainerizedInterface
      */
     private array $tasks = [];
 
+    private float $poolingErrorTimeout = 5.0;
+
     public function __construct(
         protected readonly string $token,
         ApiInterface $api = null,
@@ -65,7 +68,7 @@ class TelegramBot implements ContainerizedInterface
 
         $this->router = new Router();
 
-        $this->errorHandler = fn (\Throwable $e) => $this->logger->error($e->getMessage());
+        $this->errorHandler = fn (\Throwable $e, self $bot) => $bot->getLogger()->error($e->getMessage());
     }
 
     public function withContainer(ContainerInterface $container): self
@@ -78,12 +81,18 @@ class TelegramBot implements ContainerizedInterface
         return $self;
     }
 
-    public function withErrorHandler(\Closure $errorHandler): self
+    public function setErrorHandler(\Closure $errorHandler): self
     {
-        $self = clone $this;
-        $self->errorHandler = $errorHandler;
+        $this->errorHandler = $errorHandler;
 
-        return $self;
+        return $this;
+    }
+
+    public function setPoolingErrorTimeout(float $poolingErrorTimeout): self
+    {
+        $this->poolingErrorTimeout = $poolingErrorTimeout;
+
+        return $this;
     }
 
     public function getToken(): string
@@ -197,24 +206,26 @@ class TelegramBot implements ContainerizedInterface
                     allowedUpdates: $allowedUpdates,
                 );
             } catch (\Throwable $e) {
-                $waitTime = 5;
+                $message = "Error while pooling updates: '{$e->getMessage()}'.";
 
-                ($this->errorHandler)(new PhenogramException(
-                    message: sprintf(
-                        'Error while pooling updates: "%s". Waiting for %d seconds until next pull',
-                        $e->getMessage(),
-                        $waitTime,
-                    ),
+                if ($this->poolingErrorTimeout !== 0.0) {
+                    $message .= " Waiting for {$this->poolingErrorTimeout} seconds until next pull";
+                }
+
+                ($this->errorHandler)(new UpdatePullingException(
+                    message: $message,
                     previous: $e,
                 ), $this);
 
-                try {
-                    // 🥴 при резком исчезновении интернета в лупе возникает ошибка
-                    // "Stream watcher invoked after stream closed" (Http2ConnectionProcessor.php:1588)
-                    // Может я не правильно использую что-то, но пока так
-                    delay($waitTime);
-                } catch (\Throwable) {
-                    delay($waitTime);
+                if ($this->poolingErrorTimeout !== 0.0) {
+                    try {
+                        // 🥴 при резком исчезновении интернета на этом месте в лупе возникает ошибка
+                        // "Stream watcher invoked after stream closed" (Http2ConnectionProcessor.php:1588)
+                        // Может я не правильно использую что-то, но пока так
+                        delay($this->poolingErrorTimeout);
+                    } catch (\Throwable) {
+                        delay($this->poolingErrorTimeout);
+                    }
                 }
 
                 continue;
