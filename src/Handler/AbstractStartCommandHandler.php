@@ -6,11 +6,6 @@ use Phenogram\Bindings\Types\Update;
 
 abstract class AbstractStartCommandHandler extends AbstractCommandHandler
 {
-    /**
-     * @var bool Handle /start if it is the only command in the message
-     */
-    protected static bool $strict = true;
-
     public static function supports(Update $update): bool
     {
         $message = $update->message;
@@ -24,17 +19,18 @@ abstract class AbstractStartCommandHandler extends AbstractCommandHandler
             text: $message->text
         );
 
-        if (static::$strict) {
-            return count($commands) === 1
-                && str_starts_with($commands[0], '/start');
-        }
+        return count($commands) > 0 && str_starts_with($commands[0], '/start');
+    }
 
-        foreach ($commands as $command) {
-            if (str_starts_with($command, '/start')) {
-                return true;
-            }
-        }
+    /**
+     * @see https://core.telegram.org/bots/features#deep-linking
+     */
+    protected static function extractArguments(Update $update): ?string
+    {
+        $text = $update->message->text;
 
-        return false;
+        assert($text !== null);
+
+        return explode(' ', $text, 2)[1] ?? null;
     }
 }

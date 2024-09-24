@@ -1,12 +1,13 @@
 <?php
 
-namespace Phenogram\Framework\Tests;
+declare(strict_types=1);
+
+namespace Phenogram\Framework\Tests\factories;
 
 use Faker\Factory;
 use Faker\Generator;
-use PHPUnit\Framework\TestCase as BaseTestCase;
 
-abstract class TestCase extends BaseTestCase
+abstract class AbstractFactory
 {
     private static Generator $faker;
 
