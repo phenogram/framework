@@ -6,6 +6,7 @@ namespace Phenogram\Framework\Tests\factories;
 
 use Phenogram\Bindings\Types\Chat;
 use Phenogram\Bindings\Types\Message;
+use Phenogram\Bindings\Types\User;
 
 class MessageFactory extends AbstractFactory
 {
@@ -15,6 +16,7 @@ class MessageFactory extends AbstractFactory
         Chat $chat = null,
         string $text = null,
         array $entities = null,
+        User $from = null,
     ): Message {
         return new Message(
             messageId: $messageId ?? self::fake()->randomNumber(),
@@ -22,6 +24,7 @@ class MessageFactory extends AbstractFactory
             chat: $chat ?? ChatFactory::make(),
             text: $text,
             entities: $entities,
+            from: $from,
         );
     }
 }
