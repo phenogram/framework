@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phenogram\Framework\Tests\factories;
+namespace Phenogram\Framework\Factories;
 
 use Phenogram\Bindings\Types\User;
 

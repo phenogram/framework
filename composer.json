@@ -2,11 +2,12 @@
     "name": "phenogram/framework",
     "description": "Telegram bot API framework",
     "type": "library",
-    "version": "2.6.5",
+    "version": "2.6.6",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Phenogram\\Framework\\": "src"
+            "Phenogram\\Framework\\": "src",
+            "Phenogram\\Framework\\Factories\\": "factories"
         }
     },
     "autoload-dev": {
