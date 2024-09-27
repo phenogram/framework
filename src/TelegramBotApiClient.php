@@ -41,6 +41,7 @@ final class TelegramBotApiClient implements ClientInterface
         );
 
         $request->setTransferTimeout(60);
+        $request->setInactivityTimeout(60);
         $request->setHeader('Content-Type', 'application/json');
 
         try {
