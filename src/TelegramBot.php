@@ -65,13 +65,23 @@ class TelegramBot implements ContainerizedInterface
         return $self;
     }
 
-    public function run(float $poolingErrorTimeout = 5.0): void
-    {
+    public function run(
+        int $offset = null,
+        ?int $limit = 100,
+        int $timeout = null,
+        array $allowedUpdates = null,
+        float $poolingErrorTimeout = 5.0
+    ): void {
         $updatePuller = new UpdatePuller($this, $poolingErrorTimeout);
 
         $this->stopPulling = $updatePuller->stop(...);
 
-        $updatePuller->run();
+        $updatePuller->run(
+            offset: $offset,
+            limit: $limit,
+            timeout: $timeout,
+            allowedUpdates: $allowedUpdates,
+        );
     }
 
     /**
