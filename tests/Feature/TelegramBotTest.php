@@ -37,11 +37,12 @@ final class TelegramBotTest extends TestCase
 
         $bot = new TelegramBot(
             token: 'token',
-            logger: $logger,
             api: new Api(
                 client: $client
             ),
         );
+
+        $bot->logger = $logger;
 
         $counter = 0;
 
@@ -132,11 +133,12 @@ final class TelegramBotTest extends TestCase
 
         $bot = new TelegramBot(
             token: 'token',
-            logger: $logger,
             api: new Api(
                 client: $client
             ),
         );
+
+        $bot->logger = $logger;
 
         $customException = new class() extends \Exception {
             protected $message = 'Custom exception';
@@ -149,10 +151,10 @@ final class TelegramBotTest extends TestCase
                 ++$counter;
             }
 
-            $bot->getLogger()->error($e->getMessage());
+            $bot->logger->error($e->getMessage());
         };
 
-        $bot->setErrorHandler($exceptionHandler);
+        $bot->errorHandler = $exceptionHandler;
 
         $bot->addHandler(function (Update $update, TelegramBot $bot) use (&$counter) {
             ++$counter;

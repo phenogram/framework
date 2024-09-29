@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phenogram\Framework;
+namespace Phenogram\Framework\UpdatePuller;
 
 enum BotStatus: string
 {

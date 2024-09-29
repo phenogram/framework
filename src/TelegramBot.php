@@ -3,64 +3,47 @@
 namespace Phenogram\Framework;
 
 use Amp\Future;
-use Amp\TimeoutCancellation;
 use Phenogram\Bindings\Api;
 use Phenogram\Bindings\ApiInterface;
 use Phenogram\Bindings\Serializer;
 use Phenogram\Bindings\Types\Update;
-use Phenogram\Bindings\Types\UpdateType;
-use Phenogram\Framework\Exception\PhenogramException;
-use Phenogram\Framework\Exception\UpdatePullingException;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\ContainerizedInterface;
 use Phenogram\Framework\Interface\RouteInterface;
 use Phenogram\Framework\Router\RouteConfigurator;
 use Phenogram\Framework\Router\Router;
 use Phenogram\Framework\Trait\ContainerTrait;
+use Phenogram\Framework\UpdatePuller\UpdatePuller;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use PsrDiscovery\Discover;
-use Revolt\EventLoop;
 
 use function Amp\async;
-use function Amp\delay;
-use function Amp\Future\awaitAll;
 
 class TelegramBot implements ContainerizedInterface
 {
     use ContainerTrait;
 
-    public Api $api;
+    public readonly Api $api;
 
     /**
      * @var array<UpdateHandlerInterface>
      */
     private array $handlers = [];
 
-    private LoggerInterface $logger;
+    protected Router $router;
 
-    private ?BotStatus $status = null;
-    private ?Future $pullUpdatesFuture = null;
+    public LoggerInterface $logger;
 
-    private Router $router;
+    public \Closure $errorHandler;
 
-    private \Closure $errorHandler;
-
-    /**
-     * @var array<Future>
-     */
-    private array $tasks = [];
-
-    private float $poolingErrorTimeout = 5.0;
+    private ?\Closure $stopPulling = null;
 
     public function __construct(
         protected readonly string $token,
         ApiInterface $api = null,
         LoggerInterface $logger = null,
     ) {
-        $this->logger = $logger ?? Discover::log() ?? new NullLogger();
-
         $this->api = $api ?? new Api(
             client: new TelegramBotApiClient($token),
             serializer: new Serializer(),
@@ -68,7 +51,8 @@ class TelegramBot implements ContainerizedInterface
 
         $this->router = new Router();
 
-        $this->errorHandler = fn (\Throwable $e, self $bot) => $bot->getLogger()->error($e->getMessage());
+        $this->logger = $logger ?? Discover::log() ?? new EchoLogger();
+        $this->errorHandler = fn (\Throwable $e, self $bot) => $bot->logger->error($e->getMessage());
     }
 
     public function withContainer(ContainerInterface $container): self
@@ -81,172 +65,32 @@ class TelegramBot implements ContainerizedInterface
         return $self;
     }
 
-    public function setErrorHandler(\Closure $errorHandler): self
+    public function run(float $poolingErrorTimeout = 5.0): void
     {
-        $this->errorHandler = $errorHandler;
+        $updatePuller = new UpdatePuller($this, $poolingErrorTimeout);
 
-        return $this;
+        $this->stopPulling = $updatePuller->stop(...);
+
+        $updatePuller->run();
     }
 
-    public function setPoolingErrorTimeout(float $poolingErrorTimeout): self
+    /**
+     * @throws \LogicException
+     */
+    public function stop(): void
     {
-        $this->poolingErrorTimeout = $poolingErrorTimeout;
+        if ($this->stopPulling === null) {
+            throw new \LogicException('Pulling is not running');
+        }
 
-        return $this;
+        ($this->stopPulling)();
+
+        $this->stopPulling = null;
     }
 
     public function getToken(): string
     {
         return $this->token;
-    }
-
-    public function getLogger(): LoggerInterface
-    {
-        return $this->logger;
-    }
-
-    /**
-     * @param array<UpdateType>|null $allowedUpdates
-     */
-    public function run(
-        int $offset = null,
-        ?int $limit = 100,
-        int $timeout = null,
-        array $allowedUpdates = null,
-    ): void {
-        $offset = $offset ?? 1;
-        $timeout = $timeout ?? 15;
-
-        $this->status = BotStatus::starting;
-
-        $this->logger->info(sprintf(
-            'Starting bot with offset %d, limit %d, timeout %d',
-            $offset,
-            $limit,
-            $timeout,
-        ));
-
-        foreach ($this->pullUpdates($offset, $limit, $timeout, $allowedUpdates) as $update) {
-            $this->tasks[$update->updateId] = async(function () use ($update) {
-                [$exceptions] = awaitAll($this->handleUpdate($update));
-
-                /** @var \Throwable $exception */
-                foreach ($exceptions as $exception) {
-                    ($this->errorHandler)(new PhenogramException(
-                        message: sprintf('Error while handling update: %s', $exception->getMessage()),
-                        previous: $exception,
-                    ), $this);
-                }
-
-                unset($this->tasks[$update->updateId]);
-            });
-        }
-    }
-
-    public function stop(float $timeout = 0.0): void
-    {
-        $this->logger->info('Stopping bot');
-
-        $this->status = BotStatus::stopping;
-
-        if ($timeout !== 0.0) {
-            $this->logger->info(sprintf('Waiting for %d seconds before stopping', $timeout));
-        }
-
-        $timeoutTimer = new TimeoutCancellation($timeout);
-
-        [$exceptions] = awaitAll($this->tasks, $timeoutTimer);
-
-        /** @var \Throwable $exception */
-        foreach ($exceptions as $exception) {
-            ($this->errorHandler)(new PhenogramException(
-                message: sprintf('Error while stopping bot: %s', $exception->getMessage()),
-                previous: $exception,
-            ), $this);
-        }
-
-        $this->status = BotStatus::stopped;
-    }
-
-    /**
-     * @param array<UpdateType>|null $allowedUpdates
-     *
-     * @return \Generator<Update>
-     */
-    private function pullUpdates(
-        int $offset,
-        ?int $limit,
-        int $timeout,
-        ?array $allowedUpdates,
-    ): \Generator {
-        $this->status = BotStatus::started;
-
-        if ($allowedUpdates !== null) {
-            $allowedUpdates = array_map(
-                fn (UpdateType $type) => $type->value,
-                $allowedUpdates
-            );
-        }
-
-        $oldErrorHandler = EventLoop::getErrorHandler();
-        EventLoop::setErrorHandler($this->errorHandler);
-
-        while ($this->status !== BotStatus::stopping) {
-            $this->logger->debug('Polling updates', [
-                'offset' => $offset,
-                'limit' => $limit,
-                'allowedUpdates' => $allowedUpdates,
-                'timeout' => $timeout,
-            ]);
-
-            try {
-                $updates = $this->api->getUpdates(
-                    offset: $offset,
-                    limit: $limit,
-                    allowedUpdates: $allowedUpdates,
-                );
-            } catch (\Throwable $e) {
-                $message = "Error while pooling updates: '{$e->getMessage()}'.";
-
-                if ($this->poolingErrorTimeout !== 0.0) {
-                    $message .= " Waiting for {$this->poolingErrorTimeout} seconds until next pull";
-                }
-
-                ($this->errorHandler)(new UpdatePullingException(
-                    message: $message,
-                    previous: $e,
-                ), $this);
-
-                if ($this->poolingErrorTimeout !== 0.0) {
-                    try {
-                        // 🥴 при резком исчезновении интернета на этом месте в лупе возникает ошибка
-                        // "Stream watcher invoked after stream closed" (Http2ConnectionProcessor.php:1588)
-                        // Может я не правильно использую что-то, но пока так
-                        delay($this->poolingErrorTimeout);
-                    } catch (\Throwable) {
-                        delay($this->poolingErrorTimeout);
-                    }
-                }
-
-                continue;
-            }
-
-            $this->logger->debug('Got updates', [
-                'updates' => $updates,
-            ]);
-
-            $offset = array_reduce(
-                $updates,
-                fn ($max, $update) => max($max, $update->updateId + 1),
-                $offset
-            );
-
-            foreach ($updates as $update) {
-                yield $update;
-            }
-        }
-
-        EventLoop::setErrorHandler($oldErrorHandler);
     }
 
     public function addHandler(UpdateHandlerInterface|\Closure|string $handler): RouteConfigurator
