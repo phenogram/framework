@@ -12,7 +12,7 @@ abstract class AbstractCommandHandler implements UpdateHandlerInterface
      *
      * @return array<string>
      */
-    protected static function extractCommands(array $entities, string $text): array
+    public static function extractCommands(array $entities, string $text): array
     {
         $commands = [];
 
@@ -59,7 +59,7 @@ abstract class AbstractCommandHandler implements UpdateHandlerInterface
         return $byteOffset;
     }
 
-    protected static function hasCommand(Update $update, string $command): bool
+    public static function hasCommand(Update $update, string $command): bool
     {
         return $update->message?->entities !== null
             && $update->message->text !== null
