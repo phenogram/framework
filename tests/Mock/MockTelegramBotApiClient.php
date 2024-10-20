@@ -14,11 +14,11 @@ class MockTelegramBotApiClient implements ClientInterface
 
     public function __construct(
         public float $responseTimeout = 1.5,
-        public ?string $defaultResponse = null,
+        public ?array $defaultResponse = null,
     ) {
     }
 
-    public function addResponse(string $response, string $method = null): self
+    public function addResponse(array $response, string $method = null): self
     {
         $key = $method ?? self::NONE_METHOD_KEY;
         if (!isset($this->responses[$key])) {
@@ -30,7 +30,7 @@ class MockTelegramBotApiClient implements ClientInterface
         return $this;
     }
 
-    public function getResponse(string $method = null): string
+    public function getResponse(string $method = null): array
     {
         $key = $method ?? self::NONE_METHOD_KEY;
 
@@ -45,7 +45,7 @@ class MockTelegramBotApiClient implements ClientInterface
         return array_shift($this->responses[$key]);
     }
 
-    public function sendRequest(string $method, string $json): Response
+    public function sendRequest(string $method, array $data): Response
     {
         delay($this->responseTimeout);
 

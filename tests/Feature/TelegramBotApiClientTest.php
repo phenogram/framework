@@ -11,15 +11,19 @@ class TelegramBotApiClientTest extends TestCase
     {
         parent::setUp();
 
-        $this->token = $_ENV['TELEGRAM_BOT_TOKEN'] ?? '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11';
+        $this->token = $_ENV['TELEGRAM_BOT_TOKEN'];
     }
 
     public function testSendRequest()
     {
-        self::markTestSkipped('For internal use only');
+        if ($this->token === null) {
+            $this->markTestSkipped('TELEGRAM_BOT_TOKEN not set');
+        }
+
         $client = new TelegramBotApiClient($this->token);
 
-        $response = $client->sendRequest('getMe', '');
-        dd($response);
+        $response = $client->sendRequest('getMe', []);
+
+        self::assertTrue($response->ok);
     }
 }

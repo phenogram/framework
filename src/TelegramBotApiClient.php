@@ -2,6 +2,7 @@
 
 namespace Phenogram\Framework;
 
+use Amp\Http\Client\Form;
 use Amp\Http\Client\HttpClient;
 use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\HttpException;
@@ -28,21 +29,35 @@ final class TelegramBotApiClient implements ClientInterface
         $this->logger = $logger ?? Discover::log() ?? new NullLogger();
     }
 
-    public function sendRequest(string $method, string $json): Types\Response
+    public function sendRequest(string $method, array $data): Types\Response
     {
         $this->logger->debug("Request [$method]", [
-            'json' => $json,
+            'json' => json_encode($data),
         ]);
 
         $request = new Request(
             uri: "{$this->apiUrl}/bot{$this->token}/{$method}",
             method: 'POST',
-            body: $json
         );
+
+        $body = new Form();
+
+        foreach ($data as $key => $value) {
+            if ($value instanceof Types\InputFile) {
+                if (!file_exists($value->filePath)) {
+                    throw new \RuntimeException("File not found: {$value->filePath}");
+                }
+
+                $body->addFile($key, $value->filePath);
+            } else {
+                $body->addField($key, $value);
+            }
+        }
+
+        $request->setBody($body);
 
         $request->setTransferTimeout(60);
         $request->setInactivityTimeout(60);
-        $request->setHeader('Content-Type', 'application/json');
 
         try {
             $response = $this->client->request($request);
@@ -98,7 +113,7 @@ final class TelegramBotApiClient implements ClientInterface
 
         return new Types\Response(
             ok: $responseData['ok'],
-            result: json_encode($responseData['result']),
+            result: $responseData['result'],
             errorCode: $responseData['error_code'] ?? null,
             description: $responseData['description'] ?? null,
             parameters: isset($responseData['parameters']) ? new Types\ResponseParameters(
