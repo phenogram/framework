@@ -50,7 +50,7 @@ final class TelegramBotApiClient implements ClientInterface
 
                 $body->addFile($key, $value->filePath);
             } else {
-                $body->addField($key, $value);
+                $body->addField($key, json_encode($value));
             }
         }
 
