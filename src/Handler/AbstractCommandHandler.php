@@ -2,18 +2,24 @@
 
 namespace Phenogram\Framework\Handler;
 
+use Phenogram\Bindings\Types\Message;
 use Phenogram\Bindings\Types\MessageEntity;
 use Phenogram\Bindings\Types\Update;
 
 abstract class AbstractCommandHandler implements UpdateHandlerInterface
 {
     /**
-     * @param array<MessageEntity> $entities
-     *
      * @return array<string>
      */
-    public static function extractCommands(array $entities, string $text): array
+    public static function extractCommands(Message $message): array
     {
+        $entities = $message->entities;
+        $text = $message->text;
+
+        if ($entities === null || $text === null) {
+            return [];
+        }
+
         $commands = [];
 
         $botCommands = array_filter(
@@ -61,14 +67,10 @@ abstract class AbstractCommandHandler implements UpdateHandlerInterface
 
     public static function hasCommand(Update $update, string $command): bool
     {
-        return $update->message?->entities !== null
-            && $update->message->text !== null
+        return $update->message !== null
             && in_array(
                 $command,
-                self::extractCommands(
-                    entities: $update->message->entities,
-                    text: $update->message->text
-                ),
+                self::extractCommands($update->message),
                 strict: true
             );
     }

@@ -14,10 +14,7 @@ abstract class AbstractStartCommandHandler extends AbstractCommandHandler
             return false;
         }
 
-        $commands = static::extractCommands(
-            entities: $message->entities,
-            text: $message->text
-        );
+        $commands = static::extractCommands($message);
 
         return count($commands) > 0 && str_starts_with($commands[0], '/start');
     }
