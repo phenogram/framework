@@ -9,7 +9,7 @@ use Phenogram\Bindings\Types\Chat;
 class ChatFactory extends AbstractFactory
 {
     public static function make(
-        int $chatId = null,
+        int $id = null,
         string $type = null,
         string $title = null,
         string $username = null,
@@ -18,7 +18,7 @@ class ChatFactory extends AbstractFactory
         bool $isForum = null,
     ): Chat {
         return new Chat(
-            id: $chatId ?? self::fake()->randomNumber(),
+            id: $id ?? self::fake()->randomNumber(),
             type: $type ?? self::fake()->randomElement(['private', 'group', 'supergroup', 'channel']),
             title: $title ?? self::fake()->sentence(),
             username: $username ?? self::fake()->userName(),
