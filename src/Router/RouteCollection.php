@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Router;
 
-use Phenogram\Framework\Interface\RouteInterface;
-
 /**
- * @implements \IteratorAggregate<RouteInterface>
+ * @implements \IteratorAggregate<RouteConfigurator>
  */
 class RouteCollection implements \IteratorAggregate, \Countable
 {
-    /** @var list<RouteInterface> */
+    /** @var array<string, RouteConfigurator> */
     private array $routes = [];
 
     public function __clone()
@@ -24,7 +22,7 @@ class RouteCollection implements \IteratorAggregate, \Countable
     /**
      * Gets the current RouteCollection as an Iterator that includes all routes.
      *
-     * @return \ArrayIterator<RouteInterface>
+     * @return \ArrayIterator<string,RouteConfigurator>
      */
     public function getIterator(): \ArrayIterator
     {
@@ -39,15 +37,15 @@ class RouteCollection implements \IteratorAggregate, \Countable
         return \count($this->routes);
     }
 
-    public function add(RouteInterface $route): void
+    public function add(string $name, RouteConfigurator $route): void
     {
-        $this->routes[] = $route;
+        $this->routes[$name] = $route;
     }
 
     /**
      * Returns all routes in this collection.
      *
-     * @return array<RouteInterface>
+     * @return array<string, RouteConfigurator>
      */
     public function all(): array
     {
@@ -56,8 +54,20 @@ class RouteCollection implements \IteratorAggregate, \Countable
 
     public function addCollection(self $collection): void
     {
-        foreach ($collection->all() as $route) {
-            $this->routes[] = $route;
+        foreach ($collection->all() as $name => $route) {
+            $this->routes[$name] = $route;
+        }
+    }
+
+    /**
+     * Adds a specific group to a route.
+     *
+     * @param non-empty-string $group
+     */
+    public function group(string $group): void
+    {
+        foreach ($this->routes as $route) {
+            $route->group($group);
         }
     }
 }

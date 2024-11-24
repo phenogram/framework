@@ -26,11 +26,9 @@ trait PipelineTrait
      * $route->withMiddleware(ProxyMiddleware::class, OtherMiddleware::class);
      * $route->withMiddleware([ProxyMiddleware::class, OtherMiddleware::class]);
      *
-     * @param MiddlewareType|array{0:MiddlewareType[]} ...$middleware
-     *
-     * @return RouteInterface|$this
+     * @param MiddlewareType ...$middleware
      */
-    public function withMiddleware(...$middleware): RouteInterface
+    public function withMiddleware(MiddlewareInterface|string ...$middleware): RouteInterface
     {
         $route = clone $this;
 
@@ -41,7 +39,7 @@ trait PipelineTrait
 
         /** @var MiddlewareType[] $middleware */
         foreach ($middleware as $item) {
-            $route->middleware[] = $item;
+            $route->pipeline->pushMiddleware($item);
         }
 
         return $route;
@@ -51,7 +49,6 @@ trait PipelineTrait
     {
         $route = clone $this;
 
-        $route->middleware = [$pipeline];
         $route->pipeline = $pipeline;
 
         return $route;

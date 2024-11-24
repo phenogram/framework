@@ -8,7 +8,7 @@ use Phenogram\Bindings\Types\Update;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\RouteInterface;
 
-final class BasicRoute implements RouteInterface
+final class Route implements RouteInterface
 {
     use PipelineTrait;
 
@@ -17,15 +17,9 @@ final class BasicRoute implements RouteInterface
 
     public function __construct(
         private UpdateHandlerInterface $handler,
-        private array $middlewares = [],
         callable $condition = null,
     ) {
         $this->pipeline = new Pipeline();
-
-        foreach ($middlewares as $middleware) {
-            $this->pipeline->pushMiddleware($middleware);
-        }
-
         $this->condition = $condition;
     }
 

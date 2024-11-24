@@ -9,9 +9,10 @@ use Phenogram\Bindings\Serializer;
 use Phenogram\Bindings\Types\Update;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\ContainerizedInterface;
-use Phenogram\Framework\Interface\RouteInterface;
-use Phenogram\Framework\Router\RouteConfigurator;
+use Phenogram\Framework\Router\RouteCollection;
+use Phenogram\Framework\Router\RouteGroupRegistry;
 use Phenogram\Framework\Router\Router;
+use Phenogram\Framework\Router\RoutingConfigurator;
 use Phenogram\Framework\Trait\ContainerTrait;
 use Phenogram\Framework\UpdatePuller\UpdatePuller;
 use Psr\Container\ContainerInterface;
@@ -31,7 +32,7 @@ class TelegramBot implements ContainerizedInterface
      */
     private array $handlers = [];
 
-    protected Router $router;
+    protected(set) public Router $router;
 
     public LoggerInterface $logger;
 
@@ -49,7 +50,9 @@ class TelegramBot implements ContainerizedInterface
             serializer: new Serializer(),
         );
 
-        $this->router = new Router();
+        $this->router = new Router(
+            new RouteGroupRegistry()
+        );
 
         $this->logger = $logger ?? Discover::log() ?? new EchoLogger();
         $this->errorHandler = fn (\Throwable $e, self $bot) => $bot->logger->error($e->getMessage());
@@ -103,19 +106,19 @@ class TelegramBot implements ContainerizedInterface
         return $this->token;
     }
 
-    public function addHandler(UpdateHandlerInterface|\Closure|string $handler): RouteConfigurator
+    /**
+     * @param callable(RoutingConfigurator, RouteGroupRegistry): void $callback
+     */
+    public function defineRoutes(callable $callback): void
     {
-        return $this->router->add()->handler($handler);
-    }
+        $routes = new RoutingConfigurator(
+            collection: new RouteCollection()
+        );
 
-    public function addRoute(): RouteConfigurator
-    {
-        return $this->router->add();
-    }
+        $callback($routes, $this->router->groups);
 
-    public function registerRoute(RouteInterface $route): void
-    {
-        $this->router->register($route);
+        $this->router->import($routes);
+        $this->router->boot();
     }
 
     /**

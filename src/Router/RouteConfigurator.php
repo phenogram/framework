@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Router;
 
+use Phenogram\Framework\Exception\RouteException;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Middleware\MiddlewareInterface;
 use Phenogram\Framework\Trait\ContainerTrait;
@@ -26,13 +27,32 @@ final class RouteConfigurator
     private mixed $target = null;
 
     public function __construct(
-        private readonly Router $router
+        private readonly RouteCollection $collection,
+        private readonly ?string $name = null,
     ) {
     }
 
     public function __destruct()
     {
-        $this->router->configureRoute($this);
+        $name = $this->name;
+        if ($this->target === null) {
+            throw new RouteException(sprintf('Route [%s] has no defined target. Call one of: `callable`, `handler` methods.', $name ?? 'unnamed'));
+        }
+
+        $this->collection->add($name ?? $this->generateName(), $this);
+    }
+
+    private function generateName(): string
+    {
+        if (\is_string($this->target)) {
+            return $this->target;
+        } elseif ($this->target instanceof UpdateHandlerInterface) {
+            return $this->target::class;
+        } elseif (\is_callable($this->target)) {
+            throw new \LogicException('Callable handlers must have a name.');
+        }
+
+        throw new \LogicException('Unable to generate route name.');
     }
 
     /**
