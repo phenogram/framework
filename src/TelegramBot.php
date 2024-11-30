@@ -3,16 +3,15 @@
 namespace Phenogram\Framework;
 
 use Amp\Future;
+use Closure;
 use Phenogram\Bindings\Api;
 use Phenogram\Bindings\ApiInterface;
 use Phenogram\Bindings\Serializer;
 use Phenogram\Bindings\Types\Update;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\ContainerizedInterface;
-use Phenogram\Framework\Router\RouteCollection;
-use Phenogram\Framework\Router\RouteGroupRegistry;
+use Phenogram\Framework\Router\RouteConfigurator;
 use Phenogram\Framework\Router\Router;
-use Phenogram\Framework\Router\RoutingConfigurator;
 use Phenogram\Framework\Trait\ContainerTrait;
 use Phenogram\Framework\UpdatePuller\UpdatePuller;
 use Psr\Container\ContainerInterface;
@@ -27,12 +26,7 @@ class TelegramBot implements ContainerizedInterface
 
     public readonly Api $api;
 
-    /**
-     * @var array<UpdateHandlerInterface>
-     */
-    private array $handlers = [];
-
-    protected(set) public Router $router;
+    protected Router $router;
 
     public LoggerInterface $logger;
 
@@ -50,9 +44,7 @@ class TelegramBot implements ContainerizedInterface
             serializer: new Serializer(),
         );
 
-        $this->router = new Router(
-            new RouteGroupRegistry()
-        );
+        $this->router = new Router();
 
         $this->logger = $logger ?? Discover::log() ?? new EchoLogger();
         $this->errorHandler = fn (\Throwable $e, self $bot) => $bot->logger->error($e->getMessage());
@@ -107,21 +99,6 @@ class TelegramBot implements ContainerizedInterface
     }
 
     /**
-     * @param callable(RoutingConfigurator, RouteGroupRegistry): void $callback
-     */
-    public function defineRoutes(callable $callback): void
-    {
-        $routes = new RoutingConfigurator(
-            collection: new RouteCollection()
-        );
-
-        $callback($routes, $this->router->groups);
-
-        $this->router->import($routes);
-        $this->router->boot();
-    }
-
-    /**
      * @return array<Future>
      */
     public function handleUpdate(Update $update): array
@@ -133,5 +110,25 @@ class TelegramBot implements ContainerizedInterface
         }
 
         return $tasks;
+    }
+
+    //    /**
+    //     * @deprecated Use $bot->router->add()->handler($handler) instead
+    //     *
+    //     * @param UpdateHandlerInterface|Closure|string $handler
+    //     * @return RouteConfigurator
+    //     */
+    //    #[\Deprecated(
+    //        'Use $bot->router->add()->handler($handler) instead',
+    //        since: '4.0.0',
+    //    )]
+    //    public function addHandler(UpdateHandlerInterface|Closure|string $handler): RouteConfigurator
+    //    {
+    //        return $this->router->add()->handler($handler);
+    //    }
+
+    public function defineRoutes(\Closure $callback): void
+    {
+        $callback($this->router);
     }
 }

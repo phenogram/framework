@@ -8,7 +8,7 @@ use Phenogram\Framework\Interface\RouteInterface;
 use Phenogram\Framework\Middleware\MiddlewareInterface;
 
 /**
- * @psalm-type MiddlewareType = MiddlewareInterface|class-string<MiddlewareInterface>|non-empty-string
+ * @psalm-type MiddlewareType = MiddlewareInterface|class-string<MiddlewareInterface>|callable
  */
 trait PipelineTrait
 {
@@ -28,7 +28,7 @@ trait PipelineTrait
      *
      * @param MiddlewareType ...$middleware
      */
-    public function withMiddleware(MiddlewareInterface|string ...$middleware): RouteInterface
+    public function withMiddleware(MiddlewareInterface|string|callable ...$middleware): RouteInterface
     {
         $route = clone $this;
 

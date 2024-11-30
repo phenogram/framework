@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Router;
 
+use Closure;
 use Phenogram\Framework\Exception\RouteException;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Middleware\MiddlewareInterface;
@@ -13,81 +14,62 @@ final class RouteConfigurator
 {
     use ContainerTrait;
 
-    private ?string $group = null;
-
     /** @var MiddlewareInterface[]|string[]|callable[]|null */
-    private ?array $middleware = null;
+    private(set) ?array $middleware = null;
 
     /**
-     * @var callable the condition to match the route
+     * @var null|Closure the condition to match the route
      */
-    private $condition;
+    private(set) ?Closure $condition = null;
 
-    /** @var string|callable|UpdateHandlerInterface|null */
-    private mixed $target = null;
+    /** @var string|Closure|callable|UpdateHandlerInterface|null */
+    private(set) mixed $handler = null;
 
     public function __construct(
-        private readonly RouteCollection $collection,
-        private readonly ?string $name = null,
+        private readonly Router $router,
     ) {
     }
 
     public function __destruct()
     {
-        $name = $this->name;
-        if ($this->target === null) {
-            throw new RouteException(sprintf('Route [%s] has no defined target. Call one of: `callable`, `handler` methods.', $name ?? 'unnamed'));
+        if ($this->handler === null) {
+            throw new RouteException(
+                'Route has no defined handler. You need to call the handler method.'
+            );
         }
 
-        $this->collection->add($name ?? $this->generateName(), $this);
+        $name = $this->generateName();
+
+        try {
+            $route = $this->router->configureRoute($this);
+        } catch (RouteException $e) {
+            throw new RouteException(
+                sprintf('Unable to configure route `%s`: %s', $name, $e->getMessage()),
+                $e->getCode(),
+                $e
+            );
+        }
+
+        $this->router->registerRoute($route);
     }
 
     private function generateName(): string
     {
-        if (\is_string($this->target)) {
-            return $this->target;
-        } elseif ($this->target instanceof UpdateHandlerInterface) {
-            return $this->target::class;
-        } elseif (\is_callable($this->target)) {
-            throw new \LogicException('Callable handlers must have a name.');
+        $callableName = null;
+        if (is_string($this->handler)) {
+            return $this->handler;
+        } elseif ($this->handler instanceof UpdateHandlerInterface) {
+            return $this->handler::class;
+        } elseif (is_callable($this->handler, callable_name: $callableName)) {
+            return $callableName ?? 'unnamed callable';
         }
 
-        throw new \LogicException('Unable to generate route name.');
+        return 'unnamed';
     }
 
-    /**
-     * @internal
-     *
-     * Don't use this method. For internal use only.
-     */
-    public function __get(string $name): mixed
+    public function handler(UpdateHandlerInterface|Closure|string $handler): self
     {
-        return match ($name) {
-            'target' => $this->target,
-            'group' => $this->group,
-            'middleware' => $this->middleware,
-            'condition' => $this->condition,
-            default => throw new \BadMethodCallException(\sprintf('Unable to access %s.', $name))
-        };
-    }
-
-    public function callable(array|\Closure $callable): self
-    {
-        $this->target = $callable;
-
-        return $this;
-    }
-
-    public function handler(UpdateHandlerInterface|\Closure|string $target): self
-    {
-        $this->target = $target;
-
-        return $this;
-    }
-
-    public function group(string $group): self
-    {
-        $this->group = $group;
+        $this->handler = $handler;
 
         return $this;
     }
@@ -99,9 +81,9 @@ final class RouteConfigurator
         return $this;
     }
 
-    public function middleware(MiddlewareInterface|string|callable ...$middleware): self
+    public function middleware(MiddlewareInterface|string|Closure ...$middleware): self
     {
-        if (!\is_array($middleware)) {
+        if (!is_array($middleware)) {
             $middleware = [$middleware];
         }
 

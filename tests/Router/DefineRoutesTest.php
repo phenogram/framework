@@ -9,10 +9,7 @@ use Phenogram\Framework\Factories\UpdateFactory;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\RouteInterface;
 use Phenogram\Framework\Middleware\MiddlewareInterface;
-use Phenogram\Framework\Router\RouteCollection;
-use Phenogram\Framework\Router\RouteGroupRegistry;
 use Phenogram\Framework\Router\Router;
-use Phenogram\Framework\Router\RoutingConfigurator;
 use Phenogram\Framework\TelegramBot;
 use PHPUnit\Framework\TestCase;
 
@@ -47,7 +44,7 @@ class DefineRoutesTest extends TestCase
             }
         };
 
-        $router->setRoute('echo', $echoHandlerRoute);
+        $router->registerRoute($echoHandlerRoute);
 
         $supportedHandlers = iterator_to_array($router->supportedHandlers(UpdateFactory::make()));
 
@@ -57,23 +54,33 @@ class DefineRoutesTest extends TestCase
 
     public function testDefineRouteCollection()
     {
-        $routes = new RoutingConfigurator(
-            collection: new RouteCollection()
-        );
+        $router = new Router();
 
         $counter = new class() {
             public int $count = 0;
         };
 
-        $routes
-            ->add('first')
-            ->callable(fn (Update $update, TelegramBot $bot) => $counter->count++);
-
-        $routes
-            ->add('second')
+        $router
+            ->add()
             ->handler(fn (Update $update, TelegramBot $bot) => $counter->count++);
 
-        $routes
+        $callableHandlerClass = new class($counter) {
+            public function __construct(
+                private $counter
+            ) {
+            }
+
+            public function incrementCounter(Update $update, TelegramBot $bot)
+            {
+                ++$this->counter->count;
+            }
+        };
+
+        $router
+            ->add()
+            ->handler($callableHandlerClass->incrementCounter(...));
+
+        $router
             ->add()
             ->handler(new class($counter) implements UpdateHandlerInterface {
                 public function __construct(
@@ -86,9 +93,6 @@ class DefineRoutesTest extends TestCase
                     ++$this->counter->count;
                 }
             });
-
-        $router = new Router();
-        $router->import($routes);
 
         $bot = new TelegramBot('token');
         foreach ($router->supportedHandlers(UpdateFactory::make()) as $handler) {
@@ -118,18 +122,10 @@ class DefineRoutesTest extends TestCase
             }
         };
 
-        $bot->defineRoutes(function (RoutingConfigurator $routes, RouteGroupRegistry $groups) use ($counter, $middleware) {
-            $groups
-                ->getDefaultGroup()
-                ->addMiddleware($middleware);
-
-            $routes
-                ->add('first')
-                ->callable(fn (Update $update, TelegramBot $bot) => $counter->count++);
-
-            $routes
-                ->add('second')
-                ->handler(fn (Update $update, TelegramBot $bot) => $counter->count++);
+        $bot->defineRoutes(function (Router $router) use ($counter, $middleware) {
+            $group = $router->addGroup()->middleware($middleware);
+            $group->add()->handler(fn (Update $update, TelegramBot $bot) => $counter->count++);
+            $group->add()->handler(fn (Update $update, TelegramBot $bot) => $counter->count++);
         });
 
         await($bot->handleUpdate(UpdateFactory::make()));

@@ -23,11 +23,6 @@ final class Router
      */
     private array $routes = [];
 
-    public function __construct(
-        public readonly RouteGroupRegistry $groups
-    ) {
-    }
-
     /**
      * @return \Generator<UpdateHandlerInterface>
      */
@@ -40,44 +35,30 @@ final class Router
         }
     }
 
-    public function setRoute(string $name, RouteInterface $route): self
+    public function add(): RouteConfigurator
     {
-        $this->routes[$name] = $route;
+        return new RouteConfigurator($this);
+    }
+
+    public function addGroup(): RouteGroupConfigurator
+    {
+        return new RouteGroupConfigurator($this);
+    }
+
+    public function registerRoute(RouteInterface $route): self
+    {
+        $this->routes[] = $route;
 
         return $this;
     }
 
-    public function import(
-        RoutingConfigurator $routes,
-    ): void {
-        foreach ($routes->collection as $name => $configurator) {
-            try {
-                $route = $this->configureRoute($configurator);
-            } catch (RouteException $e) {
-                throw new RouteException(\sprintf('Unable to configure route `%s`: %s', $name, $e->getMessage()), $e->getCode(), $e);
-            }
-
-            if (!isset($this->routes[$name])) {
-                $group = $this->groups->getGroup(
-                    $configurator->group ?? $this->groups->getDefaultGroupName()
-                );
-                $group->addRoute($name, $route);
-            }
-        }
-    }
-
-    public function boot(): void
+    public function configureRoute(RouteConfigurator $configurator): RouteInterface
     {
-        $this->groups->registerRoutes($this);
-    }
-
-    private function configureRoute(RouteConfigurator $configurator): RouteInterface
-    {
-        if ($configurator->target === null) {
+        if ($configurator->handler === null) {
             throw new RouteException('This route has no defined target. Call one of: `callable`, `handler` methods.');
         }
 
-        $handler = $this->getHandler($configurator->target);
+        $handler = $this->getHandler($configurator->handler);
 
         $route = new Route(
             handler: $handler,
@@ -86,7 +67,7 @@ final class Router
 
         if ($configurator->middleware !== null) {
             $middlewares = array_map(
-                fn (string|MiddlewareInterface $middleware) => $this->getMiddleware($middleware),
+                fn (string|MiddlewareInterface|\Closure $middleware) => $this->getMiddleware($middleware),
                 $configurator->middleware
             );
 
