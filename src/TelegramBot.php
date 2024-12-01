@@ -3,7 +3,6 @@
 namespace Phenogram\Framework;
 
 use Amp\Future;
-use Closure;
 use Phenogram\Bindings\Api;
 use Phenogram\Bindings\ApiInterface;
 use Phenogram\Bindings\Serializer;
@@ -36,8 +35,8 @@ class TelegramBot implements ContainerizedInterface
 
     public function __construct(
         protected readonly string $token,
-        ApiInterface $api = null,
-        LoggerInterface $logger = null,
+        ?ApiInterface $api = null,
+        ?LoggerInterface $logger = null,
     ) {
         $this->api = $api ?? new Api(
             client: new TelegramBotApiClient($token),
@@ -112,22 +111,22 @@ class TelegramBot implements ContainerizedInterface
         return $tasks;
     }
 
-        /**
-         * @deprecated Use TelegramBot::defineRoutes(...) instead
-         *
-         * @param UpdateHandlerInterface|Closure|string $handler
-         * @return RouteConfigurator
-         */
-        #[\Deprecated(
-            'Use TelegramBot::defineRoutes(...) instead',
-            since: '4.0.0',
-        )]
-        public function addHandler(UpdateHandlerInterface|Closure|string $handler): RouteConfigurator
-        {
-            return $this->router->add()->handler($handler);
-        }
+    /**
+     * @deprecated Use TelegramBot::defineHandlers(...) instead
+     */
+    #[\Deprecated(
+        'Use TelegramBot::defineHandlers(...) instead',
+        since: '4.0.0',
+    )]
+    public function addHandler(UpdateHandlerInterface|\Closure|string $handler): RouteConfigurator
+    {
+        return $this->router->add()->handler($handler);
+    }
 
-    public function defineRoutes(\Closure $callback): void
+    /**
+     * @param \Closure<Router> $callback
+     */
+    public function defineHandlers(\Closure $callback): void
     {
         $callback($this->router);
     }

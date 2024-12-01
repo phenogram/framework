@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
 
 use function Amp\Future\await;
 
-class DefineRoutesTest extends TestCase
+class DefineHandlersTest extends TestCase
 {
     public function testSetRoute()
     {
@@ -102,7 +102,7 @@ class DefineRoutesTest extends TestCase
         $this->assertEquals(3, $counter->count);
     }
 
-    public function testDefineRoutesInBot(): void
+    public function testDefineHandlersInBot(): void
     {
         $bot = new TelegramBot('token');
         $counter = new class() {
@@ -122,7 +122,7 @@ class DefineRoutesTest extends TestCase
             }
         };
 
-        $bot->defineRoutes(function (Router $router) use ($counter, $middleware) {
+        $bot->defineHandlers(function (Router $router) use ($counter, $middleware) {
             $group = $router->addGroup()->middleware($middleware);
             $group->add()->handler(fn (Update $update, TelegramBot $bot) => $counter->count++);
             $group->add()->handler(fn (Update $update, TelegramBot $bot) => $counter->count++);
@@ -131,5 +131,22 @@ class DefineRoutesTest extends TestCase
         await($bot->handleUpdate(UpdateFactory::make()));
 
         $this->assertEquals(4, $counter->count);
+    }
+
+    public function testReadmeExample(): void
+    {
+        $bot = new TelegramBot('token');
+
+        $bot->defineHandlers(function (Router $router) {
+            $router
+                ->add()
+                ->handler(fn (Update $update, TelegramBot $bot) => $bot->api->sendMessage(
+                    chatId: $update->message->chat->id,
+                    text: $update->message->text
+                ))
+                ->supports(fn (Update $update) => $update->message?->text !== null);
+        });
+
+        await($bot->handleUpdate(UpdateFactory::make()));
     }
 }

@@ -33,12 +33,15 @@ require_once __DIR__ . '/vendor/autoload.php';
 $token = ''; // Ваш токен
 
 $bot = new TelegramBot($token);
-$bot
-    ->addHandler(fn (Update $update) => $bot->api->sendMessage(
-        chatId: $update->message->chat->id,
-        text: $update->message->text
-    ))
-    ->supports(fn (Update $update) => $update->message?->text !== null);
+$bot->defineHandlers(function (Router $router) {
+    $router
+        ->add()
+        ->handler(fn (Update $update, TelegramBot $bot) => $bot->api->sendMessage(
+            chatId: $update->message->chat->id,
+            text: $update->message->text
+        ))
+        ->supports(fn (Update $update) => $update->message?->text !== null);
+});
 
 $bot->run();
 ```
@@ -50,4 +53,4 @@ $bot->run();
 
 ## TODO: дописать ридми и доку
 
-А пока пример бота посложнее (хоть и на старой версии фреймворка) вы можете [найти здесь](https://github.com/shanginn/abdul-salesman-php)
+А пока пример бота посложнее (на очень старой версии фреймворка) вы можете [найти здесь](https://github.com/shanginn/abdul-salesman-php)
