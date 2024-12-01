@@ -112,20 +112,20 @@ class TelegramBot implements ContainerizedInterface
         return $tasks;
     }
 
-    //    /**
-    //     * @deprecated Use $bot->router->add()->handler($handler) instead
-    //     *
-    //     * @param UpdateHandlerInterface|Closure|string $handler
-    //     * @return RouteConfigurator
-    //     */
-    //    #[\Deprecated(
-    //        'Use $bot->router->add()->handler($handler) instead',
-    //        since: '4.0.0',
-    //    )]
-    //    public function addHandler(UpdateHandlerInterface|Closure|string $handler): RouteConfigurator
-    //    {
-    //        return $this->router->add()->handler($handler);
-    //    }
+        /**
+         * @deprecated Use TelegramBot::defineRoutes(...) instead
+         *
+         * @param UpdateHandlerInterface|Closure|string $handler
+         * @return RouteConfigurator
+         */
+        #[\Deprecated(
+            'Use TelegramBot::defineRoutes(...) instead',
+            since: '4.0.0',
+        )]
+        public function addHandler(UpdateHandlerInterface|Closure|string $handler): RouteConfigurator
+        {
+            return $this->router->add()->handler($handler);
+        }
 
     public function defineRoutes(\Closure $callback): void
     {
