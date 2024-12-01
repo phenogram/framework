@@ -18,19 +18,17 @@ final class Router
 {
     use ContainerTrait;
 
-    private RouteCollection $collection;
-
-    public function __construct()
-    {
-        $this->collection = new RouteCollection();
-    }
+    /**
+     * @var array<RouteInterface>
+     */
+    private array $routes = [];
 
     /**
      * @return \Generator<UpdateHandlerInterface>
      */
     public function supportedHandlers(Update $update): \Generator
     {
-        foreach ($this->collection->all() as $route) {
+        foreach ($this->routes as $route) {
             if ($route->supports($update)) {
                 yield $route->getHandler();
             }
@@ -42,33 +40,41 @@ final class Router
         return new RouteConfigurator($this);
     }
 
-    public function register(RouteInterface $route): self
+    public function addGroup(): RouteGroupConfigurator
     {
-        $this->collection->add($route);
+        return new RouteGroupConfigurator($this);
+    }
+
+    public function registerRoute(RouteInterface $route): self
+    {
+        $this->routes[] = $route;
 
         return $this;
     }
 
-    public function configureRoute(RouteConfigurator $routeConfig): void
+    public function configureRoute(RouteConfigurator $configurator): RouteInterface
     {
-        if ($routeConfig->target === null) {
-            throw new RouteException(\sprintf('This route has no defined target. Call one of: `callable`, `handler` methods.'));
+        if ($configurator->handler === null) {
+            throw new RouteException('This route has no defined target. Call one of: `callable`, `handler` methods.');
         }
 
-        $handler = $this->getHandler($routeConfig->target);
+        $handler = $this->getHandler($configurator->handler);
 
-        $middlewares = array_map(
-            fn (string|MiddlewareInterface $middleware) => $this->getMiddleware($middleware),
-            $routeConfig->middleware ?? []
+        $route = new Route(
+            handler: $handler,
+            condition: $configurator->condition
         );
 
-        $this->register(
-            new BasicRoute(
-                handler: $handler,
-                middlewares: $middlewares,
-                condition: $routeConfig->condition
-            ),
-        );
+        if ($configurator->middleware !== null) {
+            $middlewares = array_map(
+                fn (string|MiddlewareInterface|\Closure $middleware) => $this->getMiddleware($middleware),
+                $configurator->middleware
+            );
+
+            $route = $route->withMiddleware(...$middlewares);
+        }
+
+        return $route;
     }
 
     private function getMiddleware(string|callable|MiddlewareInterface $middleware): MiddlewareInterface
@@ -86,7 +92,11 @@ final class Router
                 throw new RouteException('Unable to configure route pipeline without associated container');
             }
 
-            return $this->container->get($middleware);
+            try {
+                return $this->container->get($middleware);
+            } catch (ContainerExceptionInterface $e) {
+                throw new RouteException('Invalid middleware resolution', $e->getCode(), $e);
+            }
         }
 
         $name = get_debug_type($middleware);
@@ -103,11 +113,11 @@ final class Router
             return new CallableHandler($target);
         }
 
-        try {
-            if (!$this->hasContainer()) {
-                throw new RouteException('Unable to configure route pipeline without associated container');
-            }
+        if (!$this->hasContainer()) {
+            throw new RouteException('Unable to configure route pipeline without associated container');
+        }
 
+        try {
             return $this->container->get($target);
         } catch (ContainerExceptionInterface $e) {
             throw new RouteException('Invalid target resolution', $e->getCode(), $e);

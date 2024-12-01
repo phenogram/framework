@@ -8,25 +8,15 @@ use Phenogram\Bindings\Types\Update;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\RouteInterface;
 
-final class BasicRoute implements RouteInterface
+class Route implements RouteInterface
 {
     use PipelineTrait;
 
-    /** @var callable|null */
-    private $condition;
-
     public function __construct(
-        private UpdateHandlerInterface $handler,
-        private array $middlewares = [],
-        callable $condition = null,
+        private readonly UpdateHandlerInterface $handler,
+        private readonly \Closure|null $condition = null,
     ) {
         $this->pipeline = new Pipeline();
-
-        foreach ($middlewares as $middleware) {
-            $this->pipeline->pushMiddleware($middleware);
-        }
-
-        $this->condition = $condition;
     }
 
     public function supports(Update $update): bool

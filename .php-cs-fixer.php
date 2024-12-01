@@ -13,6 +13,7 @@ return (new PhpCsFixer\Config())
         'concat_space' => false,
         'ErickSkrauch/blank_line_before_return' => true,
         'ErickSkrauch/line_break_after_statements' => true,
+        'nullable_type_declaration_for_default_null_value' => false,
     ])
     ->setFinder($finder)
     ;

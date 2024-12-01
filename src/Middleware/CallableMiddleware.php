@@ -10,13 +10,9 @@ use Phenogram\Framework\TelegramBot;
 
 class CallableMiddleware implements MiddlewareInterface
 {
-    /** @var callable */
-    private $callable;
-
     public function __construct(
-        callable $callable
+        private readonly \Closure $callable
     ) {
-        $this->callable = $callable;
     }
 
     public function process(Update $update, UpdateHandlerInterface $handler, TelegramBot $bot): void
