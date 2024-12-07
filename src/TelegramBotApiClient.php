@@ -43,12 +43,14 @@ final class TelegramBotApiClient implements ClientInterface
         $body = new Form();
 
         foreach ($data as $key => $value) {
-            if ($value instanceof Types\InputFile) {
-                if (!file_exists($value->filePath)) {
-                    throw new \RuntimeException("File not found: {$value->filePath}");
+            if (is_array($value) && isset($value['file_path'])) {
+                $filePath = $value['file_path'];
+
+                if (!file_exists($filePath)) {
+                    throw new \RuntimeException("File not found: {$filePath}");
                 }
 
-                $body->addFile($key, $value->filePath);
+                $body->addFile($key, $filePath);
             } else {
                 $body->addField($key, is_array($value) ? json_encode($value) : $value);
             }
