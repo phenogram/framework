@@ -112,12 +112,10 @@ class TelegramBot implements ContainerizedInterface
     }
 
     /**
-     * @deprecated Use TelegramBot::defineHandlers(...) instead
+     * Shortcut for adding a handler.
+     * The route registries on the __destruct method,
+     * so make sure you not save the instance of the RouteConfigurator in a variable.
      */
-    #[\Deprecated(
-        'Use TelegramBot::defineHandlers(...) instead',
-        since: '4.0.0',
-    )]
     public function addHandler(UpdateHandlerInterface|\Closure|string $handler): RouteConfigurator
     {
         return $this->router->add()->handler($handler);
