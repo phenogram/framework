@@ -123,10 +123,10 @@ final class TelegramBotTest extends TestCase
 
         $client = new MockTelegramBotApiClient(
             10,
-            '[]'
+            []
         );
 
-        $updateResponse = '[{"update_id":437567765}]';
+        $updateResponse = [['update_id' => 437567765]];
         $client->addResponse(
             $updateResponse,
             'getUpdates'

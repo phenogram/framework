@@ -53,6 +53,6 @@ final class ReplyMarkupTest extends TestCase
             'reply_markup' => $inlineKeyboardMarkup,
         ]);
 
-        $this->assertEquals(json_encode($arrayKeyboard), $json);
+        $this->assertEquals($arrayKeyboard, $json);
     }
 }

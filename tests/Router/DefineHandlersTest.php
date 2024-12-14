@@ -148,5 +148,7 @@ class DefineHandlersTest extends TestCase
         });
 
         await($bot->handleUpdate(UpdateFactory::make()));
+
+        self::assertTrue(true);
     }
 }
