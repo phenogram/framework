@@ -38,8 +38,8 @@ class UpdatePuller
     public function run(
         ?int $offset = null,
         ?int $limit = 100,
-        int $timeout = null,
-        array $allowedUpdates = null,
+        ?int $timeout = null,
+        ?array $allowedUpdates = null,
     ): void {
         $offset = $offset ?? 1;
         $timeout = $timeout ?? 15;
