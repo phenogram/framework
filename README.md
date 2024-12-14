@@ -30,18 +30,17 @@ composer require phenogram/framework
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+use Phenogram\Bindings\Types\Update;
+use Phenogram\Framework\TelegramBot;
+
 $token = ''; // Ваш токен
 
 $bot = new TelegramBot($token);
-$bot->defineHandlers(function (Router $router) {
-    $router
-        ->add()
-        ->handler(fn (Update $update, TelegramBot $bot) => $bot->api->sendMessage(
-            chatId: $update->message->chat->id,
-            text: $update->message->text
-        ))
-        ->supports(fn (Update $update) => $update->message?->text !== null);
-});
+$bot->addHandler(fn (Update $update, TelegramBot $bot) => $bot->api->sendMessage(
+    chatId: $update->message->chat->id,
+    text: $update->message->text
+))
+->supports(fn (Update $update) => $update->message?->text !== null);
 
 $bot->run();
 ```

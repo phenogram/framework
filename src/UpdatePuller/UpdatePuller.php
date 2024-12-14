@@ -36,7 +36,7 @@ class UpdatePuller
      * @param list<UpdateType>|null $allowedUpdates
      */
     public function run(
-        int $offset = null,
+        ?int $offset = null,
         ?int $limit = 100,
         int $timeout = null,
         array $allowedUpdates = null,

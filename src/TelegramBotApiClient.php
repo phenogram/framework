@@ -22,7 +22,7 @@ final class TelegramBotApiClient implements ClientInterface
     public function __construct(
         private readonly string $token,
         private readonly string $apiUrl = 'https://api.telegram.org',
-        LoggerInterface $logger = null,
+        ?LoggerInterface $logger = null,
     ) {
         $this->client = HttpClientBuilder::buildDefault();
 
