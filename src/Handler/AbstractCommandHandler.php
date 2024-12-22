@@ -2,16 +2,16 @@
 
 namespace Phenogram\Framework\Handler;
 
+use Phenogram\Bindings\Types\Interfaces\MessageEntityInterface;
+use Phenogram\Bindings\Types\Interfaces\MessageInterface;
 use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
-use Phenogram\Bindings\Types\Message;
-use Phenogram\Bindings\Types\MessageEntity;
 
 abstract class AbstractCommandHandler implements UpdateHandlerInterface
 {
     /**
      * @return array<string>
      */
-    public static function extractCommands(Message $message): array
+    public static function extractCommands(MessageInterface $message): array
     {
         $entities = $message->entities;
         $text = $message->text;
@@ -24,7 +24,7 @@ abstract class AbstractCommandHandler implements UpdateHandlerInterface
 
         $botCommands = array_filter(
             $entities,
-            fn (MessageEntity $entity) => $entity->type === 'bot_command'
+            fn (MessageEntityInterface $entity) => $entity->type === 'bot_command'
         );
 
         $bytes = unpack('C*', $text);

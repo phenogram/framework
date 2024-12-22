@@ -6,7 +6,7 @@ namespace Phenogram\Framework\UpdatePuller;
 
 use Amp\Future;
 use Amp\TimeoutCancellation;
-use Phenogram\Bindings\Types\Update;
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Bindings\Types\UpdateType;
 use Phenogram\Framework\Exception\PhenogramException;
 use Phenogram\Framework\Exception\UpdatePullingException;
@@ -98,7 +98,7 @@ class UpdatePuller
     /**
      * @param list<UpdateType>|null $allowedUpdates
      *
-     * @return \Generator<Update>
+     * @return \Generator<UpdateInterface>
      */
     private function pullUpdates(
         int $offset,

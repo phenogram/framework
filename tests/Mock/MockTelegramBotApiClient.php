@@ -3,6 +3,7 @@
 namespace Phenogram\Framework\Tests\Mock;
 
 use Phenogram\Bindings\ClientInterface;
+use Phenogram\Bindings\Types\Interfaces\ResponseInterface;
 use Phenogram\Bindings\Types\Response;
 
 use function Amp\delay;
@@ -45,7 +46,7 @@ class MockTelegramBotApiClient implements ClientInterface
         return array_shift($this->responses[$key]);
     }
 
-    public function sendRequest(string $method, array $data): Response
+    public function sendRequest(string $method, array $data): ResponseInterface
     {
         delay($this->responseTimeout);
 

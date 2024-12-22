@@ -8,7 +8,7 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Phenogram\Bindings\Api;
 use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
-use Phenogram\Bindings\Types\Update;
+use Phenogram\Framework\Factories\UpdateFactory;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\TelegramBot;
 use Phenogram\Framework\Tests\Mock\MockTelegramBotApiClient;
@@ -83,11 +83,7 @@ final class TelegramBotTest extends TestCase
             ++$counter;
         });
 
-        $bot->handleUpdate(
-            new Update(
-                updateId: 1,
-            )
-        )[0]->await();
+        $bot->handleUpdate(UpdateFactory::make())[0]->await();
 
         $this->assertEquals(1, $counter);
     }
@@ -107,11 +103,7 @@ final class TelegramBotTest extends TestCase
             });
         }
 
-        await($bot->handleUpdate(
-            new Update(
-                updateId: 1,
-            )
-        ));
+        await($bot->handleUpdate(UpdateFactory::make()));
 
         $this->assertEquals(1000, $counter);
     }
