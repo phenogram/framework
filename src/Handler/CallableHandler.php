@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Handler;
 
-use Phenogram\Bindings\Types\Update;
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Framework\TelegramBot;
 
 class CallableHandler implements UpdateHandlerInterface
@@ -13,14 +13,14 @@ class CallableHandler implements UpdateHandlerInterface
     private $callable;
 
     public function __construct(
-        callable $callable
+        callable $callable,
     ) {
         $this->callable = $callable;
 
         $this->validateCallable();
     }
 
-    public function handle(Update $update, TelegramBot $bot)
+    public function handle(UpdateInterface $update, TelegramBot $bot)
     {
         return ($this->callable)($update, $bot);
     }

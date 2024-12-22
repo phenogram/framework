@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Router;
 
-use Phenogram\Bindings\Types\Update;
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Framework\Exception\PipelineException;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Middleware\MiddlewareInterface;
@@ -29,12 +29,12 @@ final class Pipeline implements UpdateHandlerInterface, MiddlewareInterface
         return $pipeline;
     }
 
-    public function process(Update $update, UpdateHandlerInterface $handler, TelegramBot $bot): void
+    public function process(UpdateInterface $update, UpdateHandlerInterface $handler, TelegramBot $bot): void
     {
         $this->withHandler($handler)->handle($update, $bot);
     }
 
-    public function handle(Update $update, TelegramBot $bot): void
+    public function handle(UpdateInterface $update, TelegramBot $bot): void
     {
         if ($this->handler === null) {
             throw new PipelineException('Unable to run pipeline, no handler given.');

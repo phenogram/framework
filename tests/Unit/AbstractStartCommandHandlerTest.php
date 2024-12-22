@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Tests\Unit;
 
-use Phenogram\Bindings\Types\Update;
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Framework\Factories\MessageEntityFactory;
 use Phenogram\Framework\Factories\MessageFactory;
 use Phenogram\Framework\Factories\UpdateFactory;
@@ -59,7 +59,7 @@ class AbstractStartCommandHandlerTest extends TestCase
     }
 
     #[DataProvider('supportsDataProvider')]
-    public function testSupports(Update $update, bool $expected): void
+    public function testSupports(UpdateInterface $update, bool $expected): void
     {
         $this->assertSame($expected, AbstractStartCommandHandler::supports($update));
     }
@@ -100,7 +100,7 @@ class AbstractStartCommandHandlerTest extends TestCase
     }
 
     #[DataProvider('extractArgumentsDataProvider')]
-    public function testExtractArguments(Update $update, ?string $expected): void
+    public function testExtractArguments(UpdateInterface $update, ?string $expected): void
     {
         $reflection = new \ReflectionClass(AbstractStartCommandHandler::class);
         $extractArguments = $reflection->getMethod('extractArguments');

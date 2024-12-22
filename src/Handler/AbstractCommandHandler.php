@@ -2,9 +2,9 @@
 
 namespace Phenogram\Framework\Handler;
 
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Bindings\Types\Message;
 use Phenogram\Bindings\Types\MessageEntity;
-use Phenogram\Bindings\Types\Update;
 
 abstract class AbstractCommandHandler implements UpdateHandlerInterface
 {
@@ -65,7 +65,7 @@ abstract class AbstractCommandHandler implements UpdateHandlerInterface
         return $byteOffset;
     }
 
-    public static function hasCommand(Update $update, string $command): bool
+    public static function hasCommand(UpdateInterface $update, string $command): bool
     {
         return $update->message !== null
             && in_array(

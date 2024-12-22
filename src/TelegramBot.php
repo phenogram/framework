@@ -6,7 +6,7 @@ use Amp\Future;
 use Phenogram\Bindings\Api;
 use Phenogram\Bindings\ApiInterface;
 use Phenogram\Bindings\Serializer;
-use Phenogram\Bindings\Types\Update;
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\ContainerizedInterface;
 use Phenogram\Framework\Router\RouteConfigurator;
@@ -64,7 +64,7 @@ class TelegramBot implements ContainerizedInterface
         ?int $limit = 100,
         ?int $timeout = null,
         ?array $allowedUpdates = null,
-        float $poolingErrorTimeout = 5.0
+        float $poolingErrorTimeout = 5.0,
     ): void {
         $updatePuller = new UpdatePuller($this, $poolingErrorTimeout);
 
@@ -100,7 +100,7 @@ class TelegramBot implements ContainerizedInterface
     /**
      * @return array<Future>
      */
-    public function handleUpdate(Update $update): array
+    public function handleUpdate(UpdateInterface $update): array
     {
         $tasks = [];
 

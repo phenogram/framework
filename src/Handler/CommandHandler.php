@@ -2,7 +2,7 @@
 
 namespace Phenogram\Framework\Handler;
 
-use Phenogram\Bindings\Types\Update;
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Framework\Interface\RouteInterface;
 use Phenogram\Framework\TelegramBot;
 
@@ -19,7 +19,7 @@ class CommandHandler extends AbstractCommandHandler implements RouteInterface
         $this->handler = new CallableHandler($callback);
     }
 
-    public function supports(Update $update): bool
+    public function supports(UpdateInterface $update): bool
     {
         return self::hasCommand($update, $this->command);
     }
@@ -30,7 +30,7 @@ class CommandHandler extends AbstractCommandHandler implements RouteInterface
         return $this->handler;
     }
 
-    public function handle(Update $update, TelegramBot $bot)
+    public function handle(UpdateInterface $update, TelegramBot $bot)
     {
         $this->handler->handle($update, $bot);
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Router;
 
-use Phenogram\Bindings\Types\Update;
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\RouteInterface;
 
@@ -14,12 +14,12 @@ class Route implements RouteInterface
 
     public function __construct(
         private readonly UpdateHandlerInterface $handler,
-        private readonly \Closure|null $condition = null,
+        private readonly ?\Closure $condition = null,
     ) {
         $this->pipeline = new Pipeline();
     }
 
-    public function supports(Update $update): bool
+    public function supports(UpdateInterface $update): bool
     {
         if ($this->condition === null) {
             return true;

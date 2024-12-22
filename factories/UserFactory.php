@@ -4,25 +4,26 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Factories;
 
+use Phenogram\Bindings\Types\Interfaces\UserInterface;
 use Phenogram\Bindings\Types\User;
 
 class UserFactory extends AbstractFactory
 {
     public static function make(
-        int $id = null,
-        bool $isBot = null,
-        string $firstName = null,
-        string $lastName = null,
-        string $username = null,
-        string $languageCode = null,
-        bool $isPremium = null,
-        bool $addedToAttachmentMenu = null,
-        bool $canJoinGroups = null,
-        bool $canReadAllGroupMessages = null,
-        bool $supportsInlineQueries = null,
-        bool $canConnectToBusiness = null,
-        bool $hasMainWebApp = null,
-    ): User {
+        ?int $id = null,
+        ?bool $isBot = null,
+        ?string $firstName = null,
+        ?string $lastName = null,
+        ?string $username = null,
+        ?string $languageCode = null,
+        ?bool $isPremium = null,
+        ?bool $addedToAttachmentMenu = null,
+        ?bool $canJoinGroups = null,
+        ?bool $canReadAllGroupMessages = null,
+        ?bool $supportsInlineQueries = null,
+        ?bool $canConnectToBusiness = null,
+        ?bool $hasMainWebApp = null,
+    ): UserInterface {
         return new User(
             id: $id ?? self::fake()->randomNumber(),
             isBot: $isBot ?? self::fake()->boolean(),

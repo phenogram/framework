@@ -7,6 +7,7 @@ namespace Phenogram\Framework\Tests\Feature;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Phenogram\Bindings\Api;
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Bindings\Types\Update;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\TelegramBot;
@@ -50,11 +51,11 @@ final class TelegramBotTest extends TestCase
         $bot->addHandler(
             new class($counter) implements UpdateHandlerInterface {
                 public function __construct(
-                    private int &$counter
+                    private int &$counter,
                 ) {
                 }
 
-                public function handle(Update $update, TelegramBot $bot)
+                public function handle(UpdateInterface $update, TelegramBot $bot)
                 {
                     ++$this->counter;
 
@@ -141,7 +142,7 @@ final class TelegramBotTest extends TestCase
 
         $bot->logger = $logger;
 
-        $customException = new class() extends \Exception {
+        $customException = new class extends \Exception {
             protected $message = 'Custom exception';
         };
 
@@ -157,7 +158,7 @@ final class TelegramBotTest extends TestCase
 
         $bot->errorHandler = $exceptionHandler;
 
-        $bot->addHandler(function (Update $update, TelegramBot $bot) use (&$counter) {
+        $bot->addHandler(function (UpdateInterface $update, TelegramBot $bot) use (&$counter) {
             ++$counter;
 
             $bot->stop();

@@ -2,11 +2,11 @@
 
 namespace Phenogram\Framework\Handler;
 
-use Phenogram\Bindings\Types\Update;
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 
 abstract class AbstractStartCommandHandler extends AbstractCommandHandler
 {
-    public static function supports(Update $update): bool
+    public static function supports(UpdateInterface $update): bool
     {
         $message = $update->message;
 
@@ -22,7 +22,7 @@ abstract class AbstractStartCommandHandler extends AbstractCommandHandler
     /**
      * @see https://core.telegram.org/bots/features#deep-linking
      */
-    protected static function extractArguments(Update $update): ?string
+    protected static function extractArguments(UpdateInterface $update): ?string
     {
         $text = $update->message->text;
 

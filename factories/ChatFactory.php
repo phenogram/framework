@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace Phenogram\Framework\Factories;
 
 use Phenogram\Bindings\Types\Chat;
+use Phenogram\Bindings\Types\Interfaces\ChatInterface;
 
 class ChatFactory extends AbstractFactory
 {
     public static function make(
-        int $id = null,
-        string $type = null,
-        string $title = null,
-        string $username = null,
-        string $firstName = null,
-        string $lastName = null,
-        bool $isForum = null,
-    ): Chat {
+        ?int $id = null,
+        ?string $type = null,
+        ?string $title = null,
+        ?string $username = null,
+        ?string $firstName = null,
+        ?string $lastName = null,
+        ?bool $isForum = null,
+    ): ChatInterface {
         return new Chat(
             id: $id ?? self::fake()->randomNumber(),
             type: $type ?? self::fake()->randomElement(['private', 'group', 'supergroup', 'channel']),

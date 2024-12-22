@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Tests\Router;
 
-use Phenogram\Bindings\Types\Update;
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Framework\Factories\UpdateFactory;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\RouteInterface;
@@ -21,8 +21,8 @@ class DefineHandlersTest extends TestCase
     {
         $router = new Router();
 
-        $echoHandler = new class() implements UpdateHandlerInterface {
-            public function handle(Update $update, TelegramBot $bot): void
+        $echoHandler = new class implements UpdateHandlerInterface {
+            public function handle(UpdateInterface $update, TelegramBot $bot): void
             {
                 echo $update->message->text;
             }
@@ -33,7 +33,7 @@ class DefineHandlersTest extends TestCase
             {
             }
 
-            public function supports(Update $update): bool
+            public function supports(UpdateInterface $update): bool
             {
                 return true;
             }
@@ -56,21 +56,21 @@ class DefineHandlersTest extends TestCase
     {
         $router = new Router();
 
-        $counter = new class() {
+        $counter = new class {
             public int $count = 0;
         };
 
         $router
             ->add()
-            ->handler(fn (Update $update, TelegramBot $bot) => $counter->count++);
+            ->handler(fn (UpdateInterface $update, TelegramBot $bot) => $counter->count++);
 
         $callableHandlerClass = new class($counter) {
             public function __construct(
-                private $counter
+                private $counter,
             ) {
             }
 
-            public function incrementCounter(Update $update, TelegramBot $bot)
+            public function incrementCounter(UpdateInterface $update, TelegramBot $bot)
             {
                 ++$this->counter->count;
             }
@@ -84,11 +84,11 @@ class DefineHandlersTest extends TestCase
             ->add()
             ->handler(new class($counter) implements UpdateHandlerInterface {
                 public function __construct(
-                    private $counter
+                    private $counter,
                 ) {
                 }
 
-                public function handle(Update $update, TelegramBot $bot): void
+                public function handle(UpdateInterface $update, TelegramBot $bot): void
                 {
                     ++$this->counter->count;
                 }
@@ -105,17 +105,17 @@ class DefineHandlersTest extends TestCase
     public function testDefineHandlersInBot(): void
     {
         $bot = new TelegramBot('token');
-        $counter = new class() {
+        $counter = new class {
             public int $count = 0;
         };
 
         $middleware = new class($counter) implements MiddlewareInterface {
             public function __construct(
-                private $counter
+                private $counter,
             ) {
             }
 
-            public function process(Update $update, UpdateHandlerInterface $handler, TelegramBot $bot): void
+            public function process(UpdateInterface $update, UpdateHandlerInterface $handler, TelegramBot $bot): void
             {
                 ++$this->counter->count;
                 $handler->handle($update, $bot);
@@ -124,8 +124,8 @@ class DefineHandlersTest extends TestCase
 
         $bot->defineHandlers(function (Router $router) use ($counter, $middleware) {
             $group = $router->addGroup()->middleware($middleware);
-            $group->add()->handler(fn (Update $update, TelegramBot $bot) => $counter->count++);
-            $group->add()->handler(fn (Update $update, TelegramBot $bot) => $counter->count++);
+            $group->add()->handler(fn (UpdateInterface $update, TelegramBot $bot) => $counter->count++);
+            $group->add()->handler(fn (UpdateInterface $update, TelegramBot $bot) => $counter->count++);
         });
 
         await($bot->handleUpdate(UpdateFactory::make()));
@@ -136,16 +136,11 @@ class DefineHandlersTest extends TestCase
     public function testReadmeExample(): void
     {
         $bot = new TelegramBot('token');
-
-        $bot->defineHandlers(function (Router $router) {
-            $router
-                ->add()
-                ->handler(fn (Update $update, TelegramBot $bot) => $bot->api->sendMessage(
-                    chatId: $update->message->chat->id,
-                    text: $update->message->text
-                ))
-                ->supports(fn (Update $update) => $update->message?->text !== null);
-        });
+        $bot->addHandler(fn (UpdateInterface $update, TelegramBot $bot) => $bot->api->sendMessage(
+            chatId: $update->message->chat->id,
+            text: $update->message->text
+        ))
+            ->supports(fn (UpdateInterface $update) => $update->message?->text !== null);
 
         await($bot->handleUpdate(UpdateFactory::make()));
 

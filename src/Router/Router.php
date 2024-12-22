@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Router;
 
-use Phenogram\Bindings\Types\Update;
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Framework\Exception\RouteException;
 use Phenogram\Framework\Handler\CallableHandler;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
@@ -26,7 +26,7 @@ final class Router
     /**
      * @return \Generator<UpdateHandlerInterface>
      */
-    public function supportedHandlers(Update $update): \Generator
+    public function supportedHandlers(UpdateInterface $update): \Generator
     {
         foreach ($this->routes as $route) {
             if ($route->supports($update)) {

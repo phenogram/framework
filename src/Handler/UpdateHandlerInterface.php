@@ -2,10 +2,10 @@
 
 namespace Phenogram\Framework\Handler;
 
-use Phenogram\Bindings\Types\Update;
+use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Framework\TelegramBot;
 
 interface UpdateHandlerInterface
 {
-    public function handle(Update $update, TelegramBot $bot);
+    public function handle(UpdateInterface $update, TelegramBot $bot);
 }
