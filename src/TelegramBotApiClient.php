@@ -23,8 +23,9 @@ final class TelegramBotApiClient implements ClientInterface
         private readonly string $token,
         private readonly string $apiUrl = 'https://api.telegram.org',
         ?LoggerInterface $logger = null,
+        ?HttpClient $client = null,
     ) {
-        $this->client = HttpClientBuilder::buildDefault();
+        $this->client = $client ?? HttpClientBuilder::buildDefault();
 
         $this->logger = $logger ?? Discover::log() ?? new NullLogger();
     }
