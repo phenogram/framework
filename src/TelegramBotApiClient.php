@@ -7,9 +7,13 @@ use Amp\Http\Client\HttpClient;
 use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\HttpException;
 use Amp\Http\Client\Request;
+use Amp\Http\Client\StreamedContent;
 use Phenogram\Bindings\ClientInterface;
 use Phenogram\Bindings\Types;
+use Phenogram\Framework\Exception\PhenogramException;
 use Phenogram\Framework\Exception\TelegramBotApiException;
+use Phenogram\Framework\Type\LocalFileInterface;
+use Phenogram\Framework\Type\ReadableStreamFileInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use PsrDiscovery\Discover;
@@ -42,14 +46,15 @@ final class TelegramBotApiClient implements ClientInterface
         );
 
         $body = new Form();
-
         foreach ($data as $key => $value) {
-            if ($value instanceof Types\Interfaces\InputFileInterface) {
-                if (!file_exists($value->filePath)) {
-                    throw new \RuntimeException("File not found: {$value->filePath}");
+            if ($value instanceof ReadableStreamFileInterface) {
+                $body->addStream($key, StreamedContent::fromStream($value->stream), $value->filename);
+            } elseif ($value instanceof LocalFileInterface) {
+                if (!file_exists($value->filepath)) {
+                    throw new PhenogramException("File not found: {$value->filepath}");
                 }
 
-                $body->addFile($key, $value->filePath);
+                $body->addStream($key, StreamedContent::fromFile($value->filepath), $value->filename);
             } else {
                 $body->addField($key, is_array($value) ? json_encode($value) : $value);
             }

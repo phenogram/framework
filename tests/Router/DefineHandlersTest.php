@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Tests\Router;
 
+use Phenogram\Bindings\Factories\UpdateFactory;
 use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
-use Phenogram\Framework\Factories\UpdateFactory;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\RouteInterface;
 use Phenogram\Framework\Middleware\MiddlewareInterface;

@@ -70,14 +70,18 @@ class UpdatePuller
         }
     }
 
-    public function stop(float $timeout = 0.0): void
+    public function stop(float $timeout = 5.0): void
     {
+        assert($timeout > 0);
+
         $this->bot->logger->info('Stopping bot');
 
         $this->status = BotStatus::stopping;
 
         if ($timeout !== 0.0) {
-            $this->bot->logger->info(sprintf('Waiting for %d seconds before stopping', $timeout));
+            $this->bot->logger->info(
+                "Waiting for all the request to complete for a maximum of $timeout seconds, then terminating."
+            );
         }
 
         $timeoutTimer = new TimeoutCancellation($timeout);
@@ -116,9 +120,17 @@ class UpdatePuller
         }
 
         $oldErrorHandler = EventLoop::getErrorHandler();
-        EventLoop::setErrorHandler($this->bot->errorHandler);
+        $errorHandler = function (\Throwable $e) use ($oldErrorHandler) {
+            try {
+                ($this->bot->errorHandler)($e, $this->bot);
+            } catch (\Throwable $e) {
+                ($oldErrorHandler)($e);
+            }
+        };
 
-        while ($this->status !== BotStatus::stopping) {
+        EventLoop::setErrorHandler($errorHandler);
+
+        while ($this->status === BotStatus::started) {
             $this->bot->logger->debug('Polling updates', [
                 'offset' => $offset,
                 'limit' => $limit,

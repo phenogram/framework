@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Tests\Unit;
 
+use Phenogram\Bindings\Factories\MessageEntityFactory;
+use Phenogram\Bindings\Factories\MessageFactory;
+use Phenogram\Bindings\Factories\UpdateFactory;
 use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
-use Phenogram\Framework\Factories\MessageEntityFactory;
-use Phenogram\Framework\Factories\MessageFactory;
-use Phenogram\Framework\Factories\UpdateFactory;
 use Phenogram\Framework\Handler\AbstractStartCommandHandler;
 use Phenogram\Framework\Tests\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;

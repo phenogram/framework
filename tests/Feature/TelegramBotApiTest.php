@@ -3,8 +3,9 @@
 namespace Phenogram\Framework\Tests\Feature;
 
 use Phenogram\Bindings\Api;
-use Phenogram\Bindings\Types\InputFile;
 use Phenogram\Framework\TelegramBotApiClient;
+use Phenogram\Framework\Type\BufferedFile;
+use Phenogram\Framework\Type\LocalFile;
 use PHPUnit\Framework\TestCase;
 
 class TelegramBotApiTest extends TestCase
@@ -43,7 +44,7 @@ class TelegramBotApiTest extends TestCase
 
         $message = $this->api->sendDocument(
             chatId: $this->testChatId,
-            document: new InputFile($file),
+            document: new LocalFile($file),
             caption: 'Test caption'
         );
 
@@ -56,10 +57,33 @@ class TelegramBotApiTest extends TestCase
 
         $message = $this->api->sendPhoto(
             chatId: $this->testChatId,
-            photo: new InputFile($photo),
+            photo: new LocalFile($photo),
             caption: 'Test caption'
         );
 
         self::assertNotNull($message->photo);
+    }
+
+    public function testCacheDocument()
+    {
+        $fileContent = file_get_contents(__DIR__ . '/../../README.md');
+
+        $file = new BufferedFile($fileContent, 'README.md');
+
+        $message = $this->api->sendDocument(
+            chatId: $this->testChatId,
+            document: $file,
+            caption: 'Test caption'
+        );
+
+        self::assertNotNull($message->document);
+
+        $message = $this->api->sendDocument(
+            chatId: $this->testChatId,
+            document: $file,
+            caption: 'Test caption'
+        );
+
+        self::assertNotNull($message->document);
     }
 }
