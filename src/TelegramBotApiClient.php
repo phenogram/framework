@@ -79,6 +79,8 @@ final class TelegramBotApiClient implements ClientInterface
             throw new TelegramBotApiException($message);
         }
 
+        $this->logger->debug("Response [$method]: status {$response->getStatus()}");
+
         $responseContent = $response->getBody()->buffer();
 
         try {
