@@ -49,7 +49,7 @@ class RequestFactory implements RequestFactoryInterface
 
                 $body->addStream($key, StreamedContent::fromFile($value->filepath), $value->filename);
             } else {
-                $body->addField($key, is_array($value) ? json_encode($value) : $value);
+                $body->addField($key, is_array($value) ? json_encode($value) : (string) $value);
             }
         }
 
