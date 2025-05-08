@@ -3,7 +3,7 @@
 namespace Phenogram\Framework\Tests\Feature;
 
 use Phenogram\Bindings\Api;
-use Phenogram\Framework\TelegramBotApiClient;
+use Phenogram\Framework\Client\TelegramBotApiClient;
 use Phenogram\Framework\Type\BufferedFile;
 use Phenogram\Framework\Type\LocalFile;
 use PHPUnit\Framework\TestCase;

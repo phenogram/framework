@@ -7,6 +7,7 @@ use Phenogram\Bindings\Api;
 use Phenogram\Bindings\ApiInterface;
 use Phenogram\Bindings\Serializer;
 use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
+use Phenogram\Framework\Client\TelegramBotApiClient;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Interface\ContainerizedInterface;
 use Phenogram\Framework\Router\RouteConfigurator;
@@ -15,6 +16,7 @@ use Phenogram\Framework\Trait\ContainerTrait;
 use Phenogram\Framework\UpdatePuller\UpdatePuller;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use PsrDiscovery\Discover;
 
 use function Amp\async;
@@ -38,14 +40,17 @@ class TelegramBot implements ContainerizedInterface
         ?ApiInterface $api = null,
         ?LoggerInterface $logger = null,
     ) {
+        $this->logger = $logger ?? Discover::log() ?? new NullLogger();
+
         $this->api = $api ?? new Api(
-            client: new TelegramBotApiClient($token),
+            client: new TelegramBotApiClient(
+                token: $token,
+                logger: $this->logger,
+            ),
             serializer: new Serializer(),
         );
 
         $this->router = new Router();
-
-        $this->logger = $logger ?? Discover::log() ?? new EchoLogger();
         $this->errorHandler = fn (\Throwable $e, self $bot) => $bot->logger->error($e->getMessage());
     }
 

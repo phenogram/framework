@@ -2,7 +2,7 @@
 
 namespace Phenogram\Framework\Tests\Feature;
 
-use Phenogram\Framework\TelegramBotApiClient;
+use Phenogram\Framework\Client\TelegramBotApiClient;
 use PHPUnit\Framework\TestCase;
 
 class TelegramBotApiClientTest extends TestCase
