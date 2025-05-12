@@ -51,7 +51,15 @@ class TelegramBot implements ContainerizedInterface
         );
 
         $this->router = new Router();
-        $this->errorHandler = fn (\Throwable $e, self $bot) => $bot->logger->error($e->getMessage());
+        $this->errorHandler = fn (\Throwable $e, self $bot) => $bot->logger->error(
+            sprintf("Error: %s\nFile: %s:%d\nTrace:\n%s",
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine(),
+                $e->getTraceAsString()
+            ),
+            ['exception_class' => get_class($e)]
+        );
     }
 
     public function withContainer(ContainerInterface $container): self

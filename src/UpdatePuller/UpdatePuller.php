@@ -54,18 +54,26 @@ class UpdatePuller
         ));
 
         foreach ($this->pullUpdates($offset, $limit, $timeout, $allowedUpdates) as $update) {
-            $this->tasks[$update->updateId] = async(function () use ($update) {
-                [$exceptions] = awaitAll($this->bot->handleUpdate($update));
+            $taskKey = uniqid() . '_' . $update->updateId;
+            $this->tasks[$taskKey] = async(function () use ($update, $taskKey) {
+                try {
+                    [$exceptions, $values] = awaitAll($this->bot->handleUpdate($update));
 
-                /** @var \Throwable $exception */
-                foreach ($exceptions as $exception) {
-                    ($this->bot->errorHandler)(new PhenogramException(
-                        message: sprintf('Error while handling update: %s', $exception->getMessage()),
-                        previous: $exception,
-                    ), $this->bot);
+                    /** @var \Throwable $exception */
+                    foreach ($exceptions as $exception) {
+                        ($this->bot->errorHandler)(new PhenogramException(
+                            message: sprintf('Error while handling update: %s', $exception->getMessage()),
+                            previous: $exception,
+                        ), $this->bot);
+                    }
+                } catch (\Throwable $e) {
+                    $this->bot->logger->critical(
+                        "Critical error while handling update: {$e->getMessage()}",
+                        ['exception' => $e]
+                    );
+                } finally {
+                    unset($this->tasks[$taskKey]);
                 }
-
-                unset($this->tasks[$update->updateId]);
             });
         }
     }
@@ -123,8 +131,19 @@ class UpdatePuller
         $errorHandler = function (\Throwable $e) use ($oldErrorHandler) {
             try {
                 ($this->bot->errorHandler)($e, $this->bot);
-            } catch (\Throwable $e) {
-                ($oldErrorHandler)($e);
+            } catch (\Throwable $handlerException) {
+                $this->bot->logger->critical(
+                    sprintf(
+                        "Bot error handler for the event loop failed: %s. Falling back to original. Original error: %s",
+                        $handlerException->getMessage(),
+                        $e->getMessage()
+                    ),
+                    ['handler_exception' => $handlerException, 'original_exception' => $e]
+                );
+
+                if ($oldErrorHandler !== null) {
+                    ($oldErrorHandler)($e);
+                }
             }
         };
 
@@ -162,8 +181,11 @@ class UpdatePuller
                         // "Stream watcher invoked after stream closed" (Http2ConnectionProcessor.php:1588)
                         // Может я не правильно использую что-то, но пока так
                         delay($this->poolingErrorTimeout);
-                    } catch (\Throwable) {
-                        delay($this->poolingErrorTimeout);
+                    } catch (\Throwable $e2) {
+                        ($this->bot->errorHandler)(new PhenogramException(
+                            message: sprintf('Error while delaying for next pull: %s', $e2->getMessage()),
+                            previous: $e2,
+                        ), $this->bot);
                     }
                 }
 
