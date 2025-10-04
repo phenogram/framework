@@ -11,7 +11,7 @@ use Phenogram\Bindings\Factories\UpdateFactory;
 use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\TelegramBot;
-use Phenogram\Framework\Tests\Mock\MockTelegramBotApiClient;
+use Phenogram\Framework\Tests\mocks\MockTelegramBotApiClient;
 use Phenogram\Framework\Tests\TestCase;
 
 use function Amp\delay;
@@ -25,15 +25,10 @@ final class TelegramBotTest extends TestCase
             new StreamHandler('php://stdout'),
         ]);
 
-        $client = new MockTelegramBotApiClient(
-            1.5,
-            []
-        );
-
-        $updateResponse = [['update_id' => 437567765]];
+        $client = new MockTelegramBotApiClient(1.5);
 
         $client->addResponse(
-            $updateResponse,
+            [UpdateFactory::make()],
             'getUpdates'
         );
 
@@ -114,14 +109,10 @@ final class TelegramBotTest extends TestCase
             new StreamHandler('php://stdout'),
         ]);
 
-        $client = new MockTelegramBotApiClient(
-            10,
-            []
-        );
+        $client = new MockTelegramBotApiClient(10);
 
-        $updateResponse = [['update_id' => 437567765]];
         $client->addResponse(
-            $updateResponse,
+            [UpdateFactory::make()],
             'getUpdates'
         );
 

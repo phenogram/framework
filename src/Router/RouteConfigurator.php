@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Router;
 
-use Closure;
 use Phenogram\Framework\Exception\RouteException;
 use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\Middleware\MiddlewareInterface;
@@ -15,15 +14,15 @@ final class RouteConfigurator
     use ContainerTrait;
 
     /** @var MiddlewareInterface[]|string[]|callable[]|null */
-    private(set) ?array $middleware = null;
+    public private(set) ?array $middleware = null;
 
     /**
-     * @var null|Closure the condition to match the route
+     * @var \Closure|null the condition to match the route
      */
-    private(set) ?Closure $condition = null;
+    public private(set) ?\Closure $condition = null;
 
-    /** @var string|Closure|callable|UpdateHandlerInterface|null */
-    private(set) mixed $handler = null;
+    /** @var string|\Closure|callable|UpdateHandlerInterface|null */
+    public private(set) mixed $handler = null;
 
     public function __construct(
         private readonly Router $router,
@@ -33,9 +32,7 @@ final class RouteConfigurator
     public function __destruct()
     {
         if ($this->handler === null) {
-            throw new RouteException(
-                'Route has no defined handler. You need to call the handler method.'
-            );
+            throw new RouteException('Route has no defined handler. You need to call the handler method.');
         }
 
         $name = $this->generateName();
@@ -43,11 +40,7 @@ final class RouteConfigurator
         try {
             $route = $this->router->configureRoute($this);
         } catch (RouteException $e) {
-            throw new RouteException(
-                sprintf('Unable to configure route `%s`: %s', $name, $e->getMessage()),
-                $e->getCode(),
-                $e
-            );
+            throw new RouteException(sprintf('Unable to configure route `%s`: %s', $name, $e->getMessage()), $e->getCode(), $e);
         }
 
         $this->router->registerRoute($route);
@@ -67,7 +60,7 @@ final class RouteConfigurator
         return 'unnamed';
     }
 
-    public function handler(UpdateHandlerInterface|Closure|string $handler): self
+    public function handler(UpdateHandlerInterface|\Closure|string $handler): self
     {
         $this->handler = $handler;
 
@@ -81,7 +74,7 @@ final class RouteConfigurator
         return $this;
     }
 
-    public function middleware(MiddlewareInterface|string|Closure ...$middleware): self
+    public function middleware(MiddlewareInterface|string|\Closure ...$middleware): self
     {
         if (!is_array($middleware)) {
             $middleware = [$middleware];

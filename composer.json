@@ -37,7 +37,8 @@
         "vlucas/phpdotenv": "^5",
         "monolog/monolog": "^3",
         "phpunit/phpunit": "^11",
-        "fakerphp/faker": "^1.23"
+        "fakerphp/faker": "^1.23",
+        "spiral/profiler": "^3.2"
     },
     "minimum-stability": "stable",
     "scripts": {

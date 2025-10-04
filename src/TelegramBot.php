@@ -17,7 +17,6 @@ use Phenogram\Framework\UpdatePuller\UpdatePuller;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use PsrDiscovery\Discover;
 
 use function Amp\async;
 
@@ -40,7 +39,7 @@ class TelegramBot implements ContainerizedInterface
         ?ApiInterface $api = null,
         ?LoggerInterface $logger = null,
     ) {
-        $this->logger = $logger ?? Discover::log() ?? new NullLogger();
+        $this->logger = $logger ?? new NullLogger();
 
         $this->api = $api ?? new Api(
             client: new TelegramBotApiClient(

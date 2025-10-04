@@ -134,7 +134,7 @@ class UpdatePuller
             } catch (\Throwable $handlerException) {
                 $this->bot->logger->critical(
                     sprintf(
-                        "Bot error handler for the event loop failed: %s. Falling back to original. Original error: %s",
+                        'Bot error handler for the event loop failed: %s. Falling back to original. Original error: %s',
                         $handlerException->getMessage(),
                         $e->getMessage()
                     ),
