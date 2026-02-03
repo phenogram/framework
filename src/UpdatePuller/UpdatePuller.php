@@ -124,7 +124,7 @@ class UpdatePuller
             try {
                 ($this->bot->errorHandler)($e, $this->bot);
             } catch (\Throwable $e) {
-                ($oldErrorHandler)($e);
+                $oldErrorHandler && ($oldErrorHandler)($e);
             }
         };
 
