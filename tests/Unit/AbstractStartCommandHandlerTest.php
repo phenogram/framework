@@ -104,7 +104,6 @@ class AbstractStartCommandHandlerTest extends TestCase
     {
         $reflection = new \ReflectionClass(AbstractStartCommandHandler::class);
         $extractArguments = $reflection->getMethod('extractArguments');
-        $extractArguments->setAccessible(true);
 
         $this->assertSame($expected, $extractArguments->invoke(null, $update));
     }
