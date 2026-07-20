@@ -93,7 +93,7 @@ final class TelegramBotApiClient implements ClientInterface
             $message = sprintf(
                 'Response [%s] is not json: %s. Error: %s',
                 $method,
-                $json,
+                $responseContent,
                 $e->getMessage()
             );
 

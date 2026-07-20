@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Tests\Feature;
 
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
 use Phenogram\Bindings\Api;
 use Phenogram\Bindings\Factories\UpdateFactory;
 use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
@@ -13,6 +11,8 @@ use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\TelegramBot;
 use Phenogram\Framework\Tests\Mock\MockTelegramBotApiClient;
 use Phenogram\Framework\Tests\TestCase;
+use Psr\Log\NullLogger;
+use Revolt\EventLoop;
 
 use function Amp\delay;
 use function Amp\Future\await;
@@ -21,12 +21,8 @@ final class TelegramBotTest extends TestCase
 {
     public function testUpdateHandlersAreWorkingInPulling()
     {
-        $logger = new Logger('test', [
-            new StreamHandler('php://stdout'),
-        ]);
-
         $client = new MockTelegramBotApiClient(
-            1.5,
+            0.02,
             []
         );
 
@@ -42,9 +38,8 @@ final class TelegramBotTest extends TestCase
             api: new Api(
                 client: $client
             ),
+            logger: new NullLogger(),
         );
-
-        $bot->logger = $logger;
 
         $counter = 0;
 
@@ -59,7 +54,7 @@ final class TelegramBotTest extends TestCase
                 {
                     ++$this->counter;
 
-                    $bot->stop();
+                    EventLoop::delay(0.01, $bot->stop(...));
                 }
             }
         );
@@ -67,6 +62,7 @@ final class TelegramBotTest extends TestCase
         $bot->run();
 
         $this->assertEquals(1, $counter);
+        $this->assertSame(15, $client->requests[0]['data']['timeout']);
     }
 
     public function testCanHandleSingleUpdateWithoutEventLoop()
@@ -110,12 +106,8 @@ final class TelegramBotTest extends TestCase
 
     public function testExceptionInUpdateHandlerIsCaught()
     {
-        $logger = new Logger('test', [
-            new StreamHandler('php://stdout'),
-        ]);
-
         $client = new MockTelegramBotApiClient(
-            10,
+            0.02,
             []
         );
 
@@ -130,9 +122,8 @@ final class TelegramBotTest extends TestCase
             api: new Api(
                 client: $client
             ),
+            logger: new NullLogger(),
         );
-
-        $bot->logger = $logger;
 
         $customException = new class extends \Exception {
             protected $message = 'Custom exception';
@@ -153,7 +144,7 @@ final class TelegramBotTest extends TestCase
         $bot->addHandler(function (UpdateInterface $update, TelegramBot $bot) use (&$counter) {
             ++$counter;
 
-            $bot->stop();
+            EventLoop::delay(0.01, $bot->stop(...));
         });
 
         $bot->addHandler(fn () => throw new $customException());

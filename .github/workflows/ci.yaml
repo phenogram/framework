@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        php:
+          - "8.4"
+          - "8.5"
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Validate Composer metadata
+        run: composer validate --strict --no-check-version
+
+      - name: Install project dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install style tools
+        run: composer tools:install
+
+      - name: Audit dependencies
+        run: |
+          composer audit --no-interaction
+          composer audit --working-dir=tools/php-cs-fixer --no-interaction
+
+      - name: Run offline checks
+        run: composer check

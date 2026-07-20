@@ -142,6 +142,7 @@ class UpdatePuller
                 $updates = $this->bot->api->getUpdates(
                     offset: $offset,
                     limit: $limit,
+                    timeout: $timeout,
                     allowedUpdates: $allowedUpdates,
                 );
             } catch (\Throwable $e) {

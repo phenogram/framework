@@ -11,7 +11,13 @@ use function Amp\delay;
 class MockTelegramBotApiClient implements ClientInterface
 {
     private const NONE_METHOD_KEY = '_none';
+
     public array $responses = [];
+
+    /**
+     * @var list<array{method: string, data: array<mixed>}>
+     */
+    public array $requests = [];
 
     public function __construct(
         public float $responseTimeout = 1.5,
@@ -19,7 +25,7 @@ class MockTelegramBotApiClient implements ClientInterface
     ) {
     }
 
-    public function addResponse(array $response, string $method = null): self
+    public function addResponse(array $response, ?string $method = null): self
     {
         $key = $method ?? self::NONE_METHOD_KEY;
         if (!isset($this->responses[$key])) {
@@ -31,7 +37,7 @@ class MockTelegramBotApiClient implements ClientInterface
         return $this;
     }
 
-    public function getResponse(string $method = null): array
+    public function getResponse(?string $method = null): array
     {
         $key = $method ?? self::NONE_METHOD_KEY;
 
@@ -48,6 +54,11 @@ class MockTelegramBotApiClient implements ClientInterface
 
     public function sendRequest(string $method, array $data): ResponseInterface
     {
+        $this->requests[] = [
+            'method' => $method,
+            'data' => $data,
+        ];
+
         delay($this->responseTimeout);
 
         return new Response(

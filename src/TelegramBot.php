@@ -23,7 +23,7 @@ class TelegramBot implements ContainerizedInterface
 {
     use ContainerTrait;
 
-    public readonly Api $api;
+    public readonly ApiInterface $api;
 
     protected Router $router;
 

@@ -24,7 +24,6 @@ class CommandHandler extends AbstractCommandHandler implements RouteInterface
         return self::hasCommand($update, $this->command);
     }
 
-    // TODO: хммм... и getHandler() и handle(). Нужны оба?
     public function getHandler(): UpdateHandlerInterface
     {
         return $this->handler;

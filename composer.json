@@ -1,9 +1,24 @@
 {
     "name": "phenogram/framework",
-    "description": "Telegram bot API framework",
+    "description": "Async, strictly typed Telegram bot framework for PHP 8.4",
     "type": "library",
-    "version": "6.0.0",
+    "version": "6.0.3",
     "license": "MIT",
+    "keywords": [
+        "async",
+        "bot",
+        "framework",
+        "php",
+        "telegram",
+        "telegram-bot",
+        "telegram-bot-api",
+        "type-safe"
+    ],
+    "homepage": "https://github.com/phenogram/framework",
+    "support": {
+        "issues": "https://github.com/phenogram/framework/issues",
+        "source": "https://github.com/phenogram/framework"
+    },
     "autoload": {
         "psr-4": {
             "Phenogram\\Framework\\": "src",
@@ -41,8 +56,21 @@
     },
     "minimum-stability": "stable",
     "scripts": {
+        "check": [
+            "@composer validate --strict --no-check-version",
+            "@lint:tools",
+            "@style",
+            "@test:offline"
+        ],
+        "lint:tools": "@composer --working-dir=tools/php-cs-fixer validate --strict",
+        "test": "@test:offline",
+        "test:offline": "php -d error_reporting=E_ALL ./vendor/bin/phpunit --configuration phpunit.xml --fail-on-warning --fail-on-deprecation",
+        "test:examples": "php -d error_reporting=E_ALL ./vendor/bin/phpunit --configuration phpunit.xml --filter ReadmeExamplesTest --fail-on-warning --fail-on-deprecation",
+        "test:integration": "php -d error_reporting=E_ALL ./vendor/bin/phpunit --configuration phpunit.integration.xml",
+        "style": "./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.php --allow-risky=yes",
         "fix": [
-            "PHP_CS_FIXER_IGNORE_ENV=1 ./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix -vvv --config=.php-cs-fixer.php --allow-risky=yes"
-        ]
+            "./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix -vvv --config=.php-cs-fixer.php --allow-risky=yes"
+        ],
+        "tools:install": "@composer install --working-dir=tools/php-cs-fixer --no-interaction --prefer-dist"
     }
 }

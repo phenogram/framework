@@ -39,9 +39,10 @@ class CallableHandler implements UpdateHandlerInterface
         $thisClassReflection = new \ReflectionClass($this);
         $handleMethodReflection = $thisClassReflection->getMethod('handle');
         $handleParameters = $handleMethodReflection->getParameters();
+        $callableParameters = $reflection->getParameters();
 
         foreach ($handleParameters as $index => $param) {
-            $callableParam = $reflection->getParameters()[$index];
+            $callableParam = $callableParameters[$index] ?? null;
 
             if ($callableParam === null) {
                 continue;
