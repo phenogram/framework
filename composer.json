@@ -42,7 +42,7 @@
         "psr-discovery/log-implementations": "^1.0",
         "psr/http-factory": "^1.0",
         "psr/container": "^2.0",
-        "phenogram/bindings": "^7",
+        "phenogram/bindings": "^7 || ^9",
         "amphp/amp": "^3.0",
         "amphp/http-client": "^5.1",
         "amphp/file": "^3.1"
