@@ -1,66 +1,66 @@
-**English** | [Русский](README.ru.md)
+[English](README.en.md) | **Русский**
 
 # Phenogram Framework
 
 [![CI](https://github.com/phenogram/framework/actions/workflows/ci.yaml/badge.svg)](https://github.com/phenogram/framework/actions/workflows/ci.yaml)
 [![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4.svg)](https://www.php.net/releases/8.4/en.php)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Лицензия: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A typed application framework for Telegram bots on PHP 8.4.
+Типизированный прикладной фреймворк для Telegram-ботов на PHP 8.4.
 
-Phenogram Framework adds long polling, routes, middleware, concurrent handlers, logging, and file uploads to [Phenogram Bindings](https://github.com/phenogram/bindings).
+Phenogram Framework добавляет long polling, маршруты, middleware, параллельные обработчики, журналирование и загрузку файлов к пакету [Phenogram Bindings](https://github.com/phenogram/bindings).
 
 > [!WARNING]
-> Version 6 is under active development. Evaluate the package before you use it in production.
+> Версия 6 находится в активной разработке. Оцените пакет перед использованием в production.
 
-## Compatibility
+## Совместимость
 
-| Framework | PHP | Bindings | Telegram Bot API model |
+| Framework | PHP | Bindings | Модель Telegram Bot API |
 | --- | --- | --- | --- |
 | 6.0.x | `^8.4` | `^7` | 9.6 |
 
-Framework 6 requires `phenogram/bindings:^7`. Bindings 7 contains the generated model for Telegram Bot API 9.6. This statement does not claim support for later Bindings major versions or later Telegram Bot API versions.
+Framework 6 требует `phenogram/bindings:^7`. Bindings 7 содержит сгенерированную модель Telegram Bot API 9.6. Это утверждение не означает поддержку более новых основных версий Bindings или более новых версий Telegram Bot API.
 
-Do not install Bindings 8 or 9 with Framework 6 unless a new Framework release declares that support.
+Не устанавливайте Bindings 8 или 9 вместе с Framework 6, пока новый выпуск Framework явно не объявит такую поддержку.
 
-## Package scope
+## Назначение пакета
 
-Use this package when you need an application layer for a Telegram bot.
+Используйте этот пакет, если вашему Telegram-боту нужен прикладной слой.
 
-The package provides:
+Пакет предоставляет:
 
-- an Amp HTTP client for Telegram Bot API requests;
-- long polling with `getUpdates`;
-- routes and route conditions;
-- middleware and route groups;
-- concurrent update handlers with Amp futures;
-- PSR-3 logging;
-- local-file, stream, and buffered-file uploads.
+- HTTP-клиент на Amp для запросов к Telegram Bot API;
+- long polling через `getUpdates`;
+- маршруты и условия маршрутов;
+- middleware и группы маршрутов;
+- параллельные обработчики обновлений на Amp futures;
+- журналирование через PSR-3;
+- загрузку локальных файлов, потоков и файлов из памяти.
 
-Use [Phenogram Bindings](https://github.com/phenogram/bindings) without this package when you only need typed API methods, Telegram types, serialization, and deserialization.
+Используйте [Phenogram Bindings](https://github.com/phenogram/bindings) без этого пакета, если вам нужны только типизированные методы API, типы Telegram, сериализация и десериализация.
 
-This package does not provide a webhook server, data storage, a queue, or a deployment platform.
+Пакет не предоставляет webhook-сервер, хранилище данных, очередь или платформу развёртывания.
 
-## Requirements
+## Требования
 
-- PHP `^8.4` (PHP 8.4 or a later PHP 8 release);
+- PHP `^8.4` (PHP 8.4 или более новый выпуск PHP 8);
 - Composer 2;
-- a Telegram bot token for live use.
+- токен Telegram-бота для работы с Telegram.
 
-The offline examples and the default test suite do not need a token.
+Для офлайн-примеров и стандартного набора тестов токен не нужен.
 
-## Installation
+## Установка
 
 ```bash
 composer require phenogram/framework
 ```
 
-## Examples
+## Примеры
 
-The repository contains complete example files. The offline test suite loads these files directly. The tests use an in-memory Telegram client and do not use the network.
+Репозиторий содержит полные файлы примеров. Офлайн-тесты загружают эти файлы напрямую. Тесты используют клиент Telegram в памяти и не обращаются к сети.
 
-The commands below require a source checkout.
-Prepare the checkout before you run them:
+Для команд ниже нужен клон репозитория.
+Подготовьте клон перед запуском:
 
 ```bash
 git clone https://github.com/phenogram/framework.git
@@ -69,128 +69,128 @@ composer install
 composer tools:install
 ```
 
-Run all example tests:
+Запустите все тесты примеров:
 
 ```bash
 composer test:examples
 ```
 
-### Echo bot
+### Эхо-бот
 
-[`examples/echo-bot.php`](examples/echo-bot.php) creates a bot that repeats each text message.
+[`examples/echo-bot.php`](examples/echo-bot.php) создаёт бота, который повторяет каждое текстовое сообщение.
 
-The route condition rejects updates that do not contain text. The handler can then read the message and chat fields.
+Условие маршрута отклоняет обновления без текста. После этого обработчик может безопасно прочитать сообщение и идентификатор чата.
 
-Run the bot:
+Запустите бота:
 
-The token below is an intentionally invalid documentation example.
+Токен ниже является намеренно недействительным примером для документации.
 
 ```bash
 export TELEGRAM_BOT_TOKEN='7245389610:AAFHBDYMKpWxYu5JrSnTlQRD9bvPz0OgHkLf'
 php examples/echo-bot.php
 ```
 
-The command uses Telegram and needs network access. Stop the bot with `Ctrl+C`.
+Команда обращается к Telegram и требует доступ к сети. Остановите бота с помощью `Ctrl+C`.
 
-### Route group and middleware
+### Группа маршрутов и middleware
 
-[`examples/route-group.php`](examples/route-group.php) adds a `/ping` route for one Telegram user.
+[`examples/route-group.php`](examples/route-group.php) добавляет маршрут `/ping` для одного пользователя Telegram.
 
-The route condition selects `/ping` text messages. `IsUserMiddleware` permits only the configured user. The handler sends `pong`.
+Условие маршрута выбирает текстовые сообщения `/ping`. `IsUserMiddleware` пропускает только настроенного пользователя. Обработчик отправляет `pong`.
 
-Call `addPingRoute($bot, $allowedUserId)` before you call `$bot->run()`.
+Вызовите `addPingRoute($bot, $allowedUserId)` до вызова `$bot->run()`.
 
-Keep each `RouteConfigurator` chain in one expression. Do not store an unfinished configurator. The framework registers the route when it releases the configurator.
+Оставляйте каждую цепочку `RouteConfigurator` в одном выражении. Не сохраняйте незавершённый конфигуратор. Фреймворк регистрирует маршрут, когда освобождает конфигуратор.
 
-### File uploads
+### Загрузка файлов
 
-[`examples/send-files.php`](examples/send-files.php) sends one file in three forms.
+[`examples/send-files.php`](examples/send-files.php) отправляет один файл в трёх формах.
 
-| Input | Class | Use |
+| Входные данные | Класс | Назначение |
 | --- | --- | --- |
-| Local path | `LocalFile` | Let the HTTP client open a file from a path. |
-| Readable stream | `ReadableStreamFile` | Send data from an Amp readable stream. |
-| String buffer | `BufferedFile` | Send data that is already in memory. |
+| Локальный путь | `LocalFile` | HTTP-клиент открывает файл по указанному пути. |
+| Читаемый поток | `ReadableStreamFile` | Клиент отправляет данные из читаемого потока Amp. |
+| Строка в памяти | `BufferedFile` | Клиент отправляет уже загруженные в память данные. |
 
-For a Telegram file ID or a public URL, pass the string directly to the applicable Bindings API method.
+Передайте строку напрямую в соответствующий метод Bindings API, если у вас есть Telegram file ID или публичный URL.
 
-Run the live file example:
+Запустите пример с реальной отправкой:
 
 ```bash
-export TELEGRAM_BOT_TOKEN='your-token'
+export TELEGRAM_BOT_TOKEN='ваш-токен'
 export TELEGRAM_CHAT_ID='123456789'
 php examples/send-files.php
 ```
 
-This command sends three copies of this README file to the selected chat.
+Команда отправляет три копии этого README в выбранный чат.
 
-## Core API
+## Основной API
 
-### Create a bot
+### Создание бота
 
-`TelegramBot` accepts a token, an optional `ApiInterface`, and an optional PSR-3 logger.
+`TelegramBot` принимает токен, необязательную реализацию `ApiInterface` и необязательный logger PSR-3.
 
-The public `$bot->api` property has the `ApiInterface` type. You can inject a compatible API implementation for tests or for a custom transport.
+Публичное свойство `$bot->api` имеет тип `ApiInterface`. Для тестов или собственного транспорта можно передать совместимую реализацию API.
 
-If you do not inject an API implementation, the framework creates:
+Если реализация API не передана, фреймворк создаёт:
 
-- `TelegramBotApiClient` as the HTTP transport;
-- `Phenogram\Bindings\Serializer` as the serializer;
-- `Phenogram\Bindings\Api` as the typed API.
+- `TelegramBotApiClient` как HTTP-транспорт;
+- `Phenogram\Bindings\Serializer` как сериализатор;
+- `Phenogram\Bindings\Api` как типизированный API.
 
-### Add handlers
+### Добавление обработчиков
 
-Use `$bot->addHandler(...)` for one route. Add `->supports(...)` when the handler must accept only specific updates.
+Используйте `$bot->addHandler(...)` для одного маршрута. Добавьте `->supports(...)`, если обработчик должен принимать только определённые обновления.
 
-Use `$bot->defineHandlers(...)` when you need a `Router`, route groups, or shared middleware.
+Используйте `$bot->defineHandlers(...)`, если нужен `Router`, группы маршрутов или общие middleware.
 
-A handler can accept these parameters:
+Обработчик может принимать следующие параметры:
 
 1. `UpdateInterface $update`
 2. `TelegramBot $bot`
 
-A handler can also accept fewer parameters. The framework schedules all supported handlers as Amp futures.
+Обработчик также может принимать меньше параметров. Фреймворк запускает все подходящие обработчики как Amp futures.
 
-### Process one update
+### Обработка одного обновления
 
-Use `$bot->handleUpdate($update)` when another component supplies the update. The method returns the handler futures. Await the futures when the caller must know that processing is complete.
+Используйте `$bot->handleUpdate($update)`, если обновление передаёт другой компонент. Метод возвращает futures обработчиков. Дождитесь их завершения, если вызывающему коду нужен результат обработки.
 
-This method is useful for tests and for a separate webhook adapter.
+Этот метод подходит для тестов и отдельного webhook-адаптера.
 
-### Start long polling
+### Запуск long polling
 
-Call `$bot->run()` to start `getUpdates` long polling.
+Вызовите `$bot->run()`, чтобы запустить long polling через `getUpdates`.
 
-The method blocks until the bot stops. Call `$bot->stop()` from application code when you must stop the polling loop.
+Метод блокирует выполнение до остановки бота. Вызовите `$bot->stop()` из кода приложения, когда нужно остановить цикл.
 
-The `allowedUpdates` argument accepts `UpdateType` values. The `limit` value must follow the Telegram Bot API limits.
+Аргумент `allowedUpdates` принимает значения `UpdateType`. Значение `limit` должно соответствовать ограничениям Telegram Bot API.
 
-### Handle errors
+### Обработка ошибок
 
-The framework sends log records to an available PSR-3 logger. It uses `EchoLogger` when discovery does not find a logger.
+Фреймворк отправляет записи в доступный logger PSR-3. Если механизм обнаружения не находит logger, фреймворк использует `EchoLogger`.
 
-Set `$bot->errorHandler` when the application needs custom error reporting. The callback receives the error and the bot instance.
+Настройте `$bot->errorHandler`, если приложению нужна собственная обработка ошибок. Callback получает ошибку и экземпляр бота.
 
-Do not log the bot token. Treat every token as a secret.
+Не записывайте токен бота в журнал. Считайте каждый токен секретом.
 
-## Tests and quality checks
+## Тесты и проверки качества
 
-Install the project and the isolated style tool:
+Установите зависимости проекта и изолированный инструмент проверки стиля:
 
 ```bash
 composer install
 composer tools:install
 ```
 
-Run the same offline checks as CI:
+Запустите те же офлайн-проверки, которые выполняет CI:
 
 ```bash
 composer check
 ```
 
-The command validates Composer metadata, checks code style, and runs the offline PHPUnit suite.
+Команда проверяет метаданные Composer, стиль кода и запускает офлайн-набор PHPUnit.
 
-You can also run one check:
+Можно запустить одну проверку:
 
 ```bash
 composer test
@@ -199,54 +199,54 @@ composer style
 composer fix
 ```
 
-The default PHPUnit configuration:
+Стандартная конфигурация PHPUnit:
 
-- does not load `.env`;
-- does not use Telegram credentials;
-- does not make network requests;
-- excludes `tests/Integration`.
+- не загружает `.env`;
+- не использует учётные данные Telegram;
+- не делает сетевые запросы;
+- исключает `tests/Integration`.
 
-## Live integration tests
+## Интеграционные тесты с Telegram
 
-Live tests are separate from the default suite. They call Telegram and can send files to a real chat.
+Тесты с реальным Telegram отделены от стандартного набора. Они обращаются к Telegram и могут отправлять файлы в настоящий чат.
 
-Set an explicit gate and the required credentials:
+Укажите явное разрешение и нужные учётные данные:
 
 ```bash
 export RUN_TELEGRAM_INTEGRATION=1
-export TELEGRAM_BOT_TOKEN='your-token'
+export TELEGRAM_BOT_TOKEN='ваш-токен'
 export TEST_CHAT_ID='123456789'
 composer test:integration
 ```
 
-The integration bootstrap can also read these values from a local `.env` file. The repository ignores `.env`.
-Values from the process environment take precedence over values from `.env`.
+Интеграционный bootstrap также может прочитать эти значения из локального файла `.env`. Репозиторий игнорирует `.env`.
+Значения из окружения процесса имеют приоритет над значениями из `.env`.
 
-Use a dedicated test bot and a dedicated test chat. Do not run live tests in CI with production credentials.
+Используйте отдельного тестового бота и отдельный тестовый чат. Не запускайте live-тесты в CI с production-учётными данными.
 
-## Security
+## Безопасность
 
-- Keep the bot token outside source control.
-- Use environment variables or a secret manager.
-- Rotate a token immediately if it appears in a log, commit, issue, or chat.
-- Review dependencies before each release.
+- Храните токен бота вне системы контроля версий.
+- Используйте переменные окружения или хранилище секретов.
+- Сразу замените токен, если он появился в журнале, коммите, issue или чате.
+- Проверяйте зависимости перед каждым выпуском.
 
-## Documentation style
+## Стиль документации
 
-English documentation uses ASD-STE100-style controlled English.
+Английская документация использует контролируемый английский в стиле ASD-STE100.
 
-- Use short sentences.
-- Give one instruction in each sentence.
-- Use one term for one meaning.
-- Explain an abbreviation before you use it.
-- Use active voice when possible.
+- Используйте короткие предложения.
+- Давайте одну инструкцию в каждом предложении.
+- Используйте один термин для одного значения.
+- Расшифруйте сокращение перед первым использованием.
+- По возможности используйте активный залог.
 
-## Contributing
+## Участие в разработке
 
-Open an issue before a large change. Keep changes small. Add an offline test for each behavior change. Update both README files when public behavior changes.
+Откройте issue перед большим изменением. Делайте изменения небольшими. Добавляйте офлайн-тест для каждого изменения поведения. Обновляйте оба файла README при изменении публичного поведения.
 
-Do not add a new Bindings major version without a compatibility review.
+Не добавляйте новую основную версию Bindings без проверки совместимости.
 
-## License
+## Лицензия
 
-Phenogram Framework is available under the [MIT License](LICENSE).
+Phenogram Framework доступен по [лицензии MIT](LICENSE).
