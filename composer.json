@@ -45,7 +45,7 @@
         "phenogram/bindings": "^7",
         "amphp/amp": "^3.0",
         "amphp/http-client": "^5.1",
-        "amphp/file": "^3.1"
+        "amphp/file": "^3.1 || ^4.0"
     },
     "require-dev": {
         "symfony/var-dumper": "^7",
