@@ -101,6 +101,8 @@ The recorded environment was:
 - `php-async` commit `454791a3b71515deb8801b4b05ef9aa97117d857`;
 - libuv 1.52.1;
 - Amp framework commit `10d350ed55cc837fac644443bf5b09de815fc5fa`;
+- native implementation and recorded-result commit
+  `f6ff19384d47289c452e3e10cda4f1ab5e01ef9c`;
 - Amp lockfile SHA-256
   `23af435aa01c9d8f34566a749fa6a4bbdc87052c6c01c8f7cecb13bd329204e1`;
 - native feature lockfile SHA-256
