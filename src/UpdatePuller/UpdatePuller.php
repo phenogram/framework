@@ -14,6 +14,7 @@ use Phenogram\Framework\Exception\PhenogramException;
 use Phenogram\Framework\Exception\UpdatePullingException;
 use Phenogram\Framework\TelegramBot;
 
+use function Async\await_all;
 use function Async\current_coroutine;
 use function Async\delay;
 use function Async\protect;
@@ -69,8 +70,9 @@ class UpdatePuller
             ));
 
             if ($this->status === BotStatus::started) {
-                $this->updatesScope = Scope::inherit()->asNotSafely();
-                $this->updatesScope->setExceptionHandler(
+                $updatesScope = Scope::inherit()->asNotSafely();
+                $this->updatesScope = $updatesScope;
+                $updatesScope->setExceptionHandler(
                     function (Scope $scope, Coroutine $task, \Throwable $exception): void {
                         if (!$exception instanceof AsyncCancellation) {
                             $this->reportUpdateError($exception);
@@ -79,13 +81,9 @@ class UpdatePuller
                 );
 
                 foreach ($this->pullUpdates($offset, $limit, $timeout, $allowedUpdates) as $update) {
-                    foreach ($this->bot->handleUpdate($update, $this->updatesScope) as $task) {
-                        $taskId = $task->getId();
-                        $this->tasks[$taskId] = $task;
-                        $task->finally(function () use ($taskId): void {
-                            unset($this->tasks[$taskId]);
-                        });
-                    }
+                    $this->trackTask($updatesScope->spawn(function () use ($update, $updatesScope): void {
+                        $this->dispatchUpdate($update, $updatesScope);
+                    }));
                 }
             }
         } catch (AsyncCancellation $exception) {
@@ -137,6 +135,34 @@ class UpdatePuller
         ) {
             $this->pollingCoroutine->cancel(new AsyncCancellation('Phenogram stop requested'));
         }
+    }
+
+    private function dispatchUpdate(UpdateInterface $update, Scope $updatesScope): void
+    {
+        try {
+            [, $errors] = await_all($this->bot->handleUpdate($update, $updatesScope));
+        } catch (AsyncCancellation $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            $this->reportUpdateError($exception);
+
+            return;
+        }
+
+        foreach ($errors as $error) {
+            if (!$error instanceof AsyncCancellation) {
+                $this->reportUpdateError($error);
+            }
+        }
+    }
+
+    private function trackTask(Coroutine $task): void
+    {
+        $taskId = $task->getId();
+        $this->tasks[$taskId] = $task;
+        $task->finally(function () use ($taskId): void {
+            unset($this->tasks[$taskId]);
+        });
     }
 
     private function drainUpdates(): void

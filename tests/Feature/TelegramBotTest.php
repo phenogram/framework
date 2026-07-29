@@ -164,6 +164,47 @@ final class TelegramBotTest extends TestCase
         $this->assertEquals(2, $counter);
     }
 
+    public function testRouteFailureIsIsolatedToOneUpdateAndPollingContinues(): void
+    {
+        $client = new MockTelegramBotApiClient(0.01, []);
+        $client->addResponse([['update_id' => 437567765]], 'getUpdates');
+        $client->addResponse([['update_id' => 437567766]], 'getUpdates');
+
+        $bot = new TelegramBot(
+            token: 'token',
+            api: new Api(client: $client),
+            logger: new NullLogger(),
+        );
+
+        $routeFailure = new \RuntimeException('Route matching failed');
+        $errors = [];
+        $handledUpdates = [];
+        $bot->errorHandler = static function (\Throwable $error) use (&$errors): void {
+            $errors[] = $error;
+        };
+
+        $bot->addHandler(
+            static function (UpdateInterface $update, TelegramBot $bot) use (&$handledUpdates): void {
+                $handledUpdates[] = $update->updateId;
+                $bot->stop();
+            },
+        )->supports(static function (UpdateInterface $update) use ($routeFailure): bool {
+            if ($update->updateId === 437567765) {
+                throw $routeFailure;
+            }
+
+            return true;
+        });
+
+        $bot->run();
+
+        self::assertSame([437567766], $handledUpdates);
+        self::assertCount(1, $errors);
+        self::assertSame('Error while handling update: Route matching failed', $errors[0]->getMessage());
+        self::assertSame($routeFailure, $errors[0]->getPrevious());
+        self::assertSame(437567766, $client->requests[1]['data']['offset']);
+    }
+
     public function testStopFromHandlerCancelsSlowSiblingAfterGracePeriod(): void
     {
         $client = new MockTelegramBotApiClient(0.02, []);
