@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "43c5480973d8ac6bbda3103e21376ebf",
+    "content-hash": "3b1d848e5c211d7b4a1833e000e5b50e",
     "packages": [
         {
             "name": "composer/semver",
@@ -85,16 +85,16 @@
         },
         {
             "name": "phenogram/bindings",
-            "version": "7.0.0",
+            "version": "9.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phenogram/bindings.git",
-                "reference": "d00b83576fa6b4aba4ee8240bb8fe605c70c075c"
+                "reference": "f2a08e5835181afd9fa0baab468d966039d6e335"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phenogram/bindings/zipball/d00b83576fa6b4aba4ee8240bb8fe605c70c075c",
-                "reference": "d00b83576fa6b4aba4ee8240bb8fe605c70c075c",
+                "url": "https://api.github.com/repos/phenogram/bindings/zipball/f2a08e5835181afd9fa0baab468d966039d6e335",
+                "reference": "f2a08e5835181afd9fa0baab468d966039d6e335",
                 "shasum": ""
             },
             "require": {
@@ -104,9 +104,12 @@
                 "ext-curl": "*",
                 "fakerphp/faker": "^1.24",
                 "monolog/monolog": "^3.4",
-                "phpunit/phpunit": "^11",
+                "phpunit/phpunit": "^11.5.50",
                 "symfony/var-dumper": "^7",
                 "vlucas/phpdotenv": "^5.5"
+            },
+            "suggest": {
+                "fakerphp/faker": "Required when an application uses the generated fixture factories."
             },
             "type": "library",
             "autoload": {
@@ -124,12 +127,23 @@
                     "email": "shanginn@gmail.com"
                 }
             ],
-            "description": "Zero deps low level type-safe PHP bindings for the Telegram Bot API",
+            "description": "Zero-dependency, low-level, type-safe PHP bindings for the Telegram Bot API",
+            "homepage": "https://github.com/phenogram/bindings",
+            "keywords": [
+                "API-Client",
+                "Telegram-Bot-API",
+                "bindings",
+                "bot",
+                "sdk",
+                "telegram",
+                "telegram-bot",
+                "type-safe"
+            ],
             "support": {
                 "issues": "https://github.com/phenogram/bindings/issues",
-                "source": "https://github.com/phenogram/bindings/tree/7.0.0"
+                "source": "https://github.com/phenogram/bindings"
             },
-            "time": "2026-04-29T06:04:39+00:00"
+            "time": "2026-07-20T12:15:06+00:00"
         },
         {
             "name": "psr-discovery/discovery",
@@ -2974,5 +2988,5 @@
         "ext-true_async": "^0.8.2"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.6.0"
 }

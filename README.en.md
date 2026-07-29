@@ -17,11 +17,9 @@ Phenogram Framework adds long polling, routes, middleware, concurrent handlers, 
 
 | Framework | PHP | Bindings | Telegram Bot API model |
 | --- | --- | --- | --- |
-| 7.0.x-dev | `^8.6` + `ext-true_async:^0.8.2` | `^7` | 9.6 |
+| 7.0.x-dev | `^8.6` + `ext-true_async:^0.8.2` | `^9.0.1` | 10.2 |
 
-Framework 7 requires `phenogram/bindings:^7` and a True Async PHP 8.6 build. Bindings 7 contains the generated model for Telegram Bot API 9.6. This statement does not claim support for later Bindings major versions or later Telegram Bot API versions.
-
-Do not install Bindings 8 or 9 with Framework 7 unless a new Framework release declares that support.
+Framework 7 requires `phenogram/bindings:^9.0.1` and a True Async PHP 8.6 build. Bindings 9 contains the generated model for Telegram Bot API 10.2.
 
 ## Package scope
 
