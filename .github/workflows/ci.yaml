@@ -9,32 +9,38 @@ permissions:
 
 jobs:
   test:
-    name: PHP ${{ matrix.php }}
-    runs-on: ubuntu-latest
+    name: True Async PHP 8.6
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        php:
-          - "8.4"
-          - "8.5"
+    env:
+      TRUE_ASYNC_IMAGE: >-
+        trueasync/php-true-async:0.8.4-php8.6@sha256:0cad741bafed949cedf5a4562d380a1c98f11d57e1f5a48be3d09379ddd137c0
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          php-version: ${{ matrix.php }}
+          persist-credentials: false
+
+      - name: Set up the PHP 8.5 tool runtime
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: "8.5"
           coverage: none
-          tools: composer:v2
+          tools: composer:2.10.2
 
       - name: Validate Composer metadata
-        run: composer validate --strict --no-check-version
+        run: |
+          composer validate --strict --no-check-version
+          composer lint:tools
 
-      - name: Install project dependencies
-        run: composer install --no-interaction --prefer-dist
+      - name: Install project dependencies for tooling
+        run: >-
+          composer install
+          --no-interaction
+          --prefer-dist
+          --ignore-platform-req=php
+          --ignore-platform-req=ext-true_async
 
       - name: Install style tools
         run: composer tools:install
@@ -44,5 +50,36 @@ jobs:
           composer audit --no-interaction
           composer audit --working-dir=tools/php-cs-fixer --no-interaction
 
-      - name: Run offline checks
-        run: composer check
+      - name: Check code style
+        run: composer style
+
+      - name: Verify the True Async runtime
+        run: |
+          docker run --rm --network none --read-only "$TRUE_ASYNC_IMAGE" php -r '
+          $version = phpversion("true_async");
+          if (
+              PHP_VERSION_ID < 80600
+              || !is_string($version)
+              || version_compare($version, "0.8.2", "<")
+          ) {
+              fwrite(STDERR, "The required True Async PHP runtime is unavailable.\n");
+              exit(1);
+          }
+          printf("PHP %s, true_async %s\n", PHP_VERSION, $version);
+          '
+
+      - name: Run offline tests on True Async
+        run: >-
+          docker run --rm
+          --network none
+          --read-only
+          --tmpfs /tmp:rw,nosuid,nodev,size=64m
+          --volume "$GITHUB_WORKSPACE:/app:ro"
+          --workdir /app
+          "$TRUE_ASYNC_IMAGE"
+          php -d error_reporting=E_ALL
+          ./vendor/bin/phpunit
+          --configuration phpunit.xml
+          --fail-on-warning
+          --fail-on-deprecation
+          --do-not-cache-result
