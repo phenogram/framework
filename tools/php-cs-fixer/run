@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -n "${PHP_CS_FIXER_PHP:-}" ]]; then
+    candidates=("${PHP_CS_FIXER_PHP}")
+else
+    candidates=(php8.5 php8.4 /opt/homebrew/bin/php /usr/local/bin/php php)
+fi
+
+for candidate in "${candidates[@]}"; do
+    if ! resolved="$(command -v "${candidate}" 2>/dev/null)"; then
+        continue
+    fi
+
+    version_id="$("${resolved}" -r 'echo PHP_VERSION_ID;' 2>/dev/null || true)"
+    if [[ "${version_id}" =~ ^[0-9]+$ ]] && ((version_id >= 80400 && version_id < 80600)); then
+        exec "${resolved}" "$(dirname "$0")/vendor/bin/php-cs-fixer" "$@"
+    fi
+done
+
+echo "PHP-CS-Fixer requires a separate PHP 8.4 or 8.5 tool runtime." >&2
+echo "Set PHP_CS_FIXER_PHP to the supported PHP binary." >&2
+exit 1

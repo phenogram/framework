@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Examples;
 
-use Amp\ByteStream\ReadableBuffer;
 use Phenogram\Bindings\ApiInterface;
 use Phenogram\Bindings\Types\Interfaces\MessageInterface;
 use Phenogram\Framework\TelegramBot;
@@ -29,27 +28,38 @@ function sendExampleFiles(
     }
 
     $filename = basename($path);
+    $stream = fopen('php://memory', 'w+b');
+    if ($stream === false) {
+        throw new \RuntimeException('Cannot open an in-memory stream');
+    }
 
-    return [
-        $api->sendDocument(
-            chatId: $chatId,
-            document: new LocalFile($path),
-        ),
-        $api->sendDocument(
-            chatId: $chatId,
-            document: new ReadableStreamFile(
-                stream: new ReadableBuffer($contents),
-                filename: $filename,
+    try {
+        fwrite($stream, $contents);
+        rewind($stream);
+
+        return [
+            $api->sendDocument(
+                chatId: $chatId,
+                document: new LocalFile($path),
             ),
-        ),
-        $api->sendDocument(
-            chatId: $chatId,
-            document: new BufferedFile(
-                content: $contents,
-                filename: $filename,
+            $api->sendDocument(
+                chatId: $chatId,
+                document: new ReadableStreamFile(
+                    stream: $stream,
+                    filename: $filename,
+                ),
             ),
-        ),
-    ];
+            $api->sendDocument(
+                chatId: $chatId,
+                document: new BufferedFile(
+                    content: $contents,
+                    filename: $filename,
+                ),
+            ),
+        ];
+    } finally {
+        fclose($stream);
+    }
 }
 
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {

@@ -2,7 +2,9 @@
 
 namespace Phenogram\Framework;
 
-use Amp\Future;
+use Async\AsyncCancellation;
+use Async\Coroutine;
+use Async\ScopeProvider;
 use Phenogram\Bindings\Api;
 use Phenogram\Bindings\ApiInterface;
 use Phenogram\Bindings\Serializer;
@@ -17,7 +19,10 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use PsrDiscovery\Discover;
 
-use function Amp\async;
+use function Async\await;
+use function Async\protect;
+use function Async\spawn;
+use function Async\spawn_with;
 
 class TelegramBot implements ContainerizedInterface
 {
@@ -69,27 +74,41 @@ class TelegramBot implements ContainerizedInterface
         $updatePuller = new UpdatePuller($this, $poolingErrorTimeout);
 
         $this->stopPulling = $updatePuller->stop(...);
-
-        $updatePuller->run(
+        $pulling = spawn(fn () => $updatePuller->run(
             offset: $offset,
             limit: $limit,
             timeout: $timeout,
             allowedUpdates: $allowedUpdates,
-        );
+        ));
+
+        try {
+            await($pulling);
+        } finally {
+            if (!$pulling->isCompleted()) {
+                protect(static function () use ($pulling): void {
+                    $pulling->cancel(new AsyncCancellation('Phenogram bot run cancelled'));
+
+                    try {
+                        await($pulling);
+                    } catch (AsyncCancellation) {
+                    }
+                });
+            }
+
+            $this->stopPulling = null;
+        }
     }
 
     /**
      * @throws \LogicException
      */
-    public function stop(): void
+    public function stop(float $timeout = 5.0): void
     {
         if ($this->stopPulling === null) {
             throw new \LogicException('Pulling is not running');
         }
 
-        ($this->stopPulling)();
-
-        $this->stopPulling = null;
+        ($this->stopPulling)($timeout);
     }
 
     public function getToken(): string
@@ -98,14 +117,17 @@ class TelegramBot implements ContainerizedInterface
     }
 
     /**
-     * @return array<Future>
+     * @return list<Coroutine>
      */
-    public function handleUpdate(UpdateInterface $update): array
+    public function handleUpdate(UpdateInterface $update, ?ScopeProvider $scope = null): array
     {
         $tasks = [];
 
         foreach ($this->router->supportedHandlers($update) as $handler) {
-            $tasks[] = async(fn () => $handler->handle($update, $this));
+            $task = fn () => $handler->handle($update, $this);
+            $tasks[] = $scope === null
+                ? spawn($task)
+                : spawn_with($scope, $task);
         }
 
         return $tasks;

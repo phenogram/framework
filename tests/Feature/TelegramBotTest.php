@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\Tests\Feature;
 
+use Async\AsyncCancellation;
 use Phenogram\Bindings\Api;
 use Phenogram\Bindings\Factories\UpdateFactory;
 use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
@@ -11,11 +12,12 @@ use Phenogram\Framework\Handler\UpdateHandlerInterface;
 use Phenogram\Framework\TelegramBot;
 use Phenogram\Framework\Tests\Mock\MockTelegramBotApiClient;
 use Phenogram\Framework\Tests\TestCase;
+use Psr\Log\AbstractLogger;
 use Psr\Log\NullLogger;
-use Revolt\EventLoop;
 
-use function Amp\delay;
-use function Amp\Future\await;
+use function Async\await_all;
+use function Async\delay;
+use function Async\spawn;
 
 final class TelegramBotTest extends TestCase
 {
@@ -31,6 +33,10 @@ final class TelegramBotTest extends TestCase
         $client->addResponse(
             $updateResponse,
             'getUpdates'
+        );
+        $client->addResponse(
+            [['update_id' => 437567766]],
+            'getUpdates',
         );
 
         $bot = new TelegramBot(
@@ -54,7 +60,8 @@ final class TelegramBotTest extends TestCase
                 {
                     ++$this->counter;
 
-                    EventLoop::delay(0.01, $bot->stop(...));
+                    delay(10);
+                    $bot->stop();
                 }
             }
         );
@@ -79,9 +86,10 @@ final class TelegramBotTest extends TestCase
             ++$counter;
         });
 
-        $bot->handleUpdate(UpdateFactory::make())[0]->await();
+        [, $errors] = await_all($bot->handleUpdate(UpdateFactory::make()));
 
         $this->assertEquals(1, $counter);
+        $this->assertSame([], $errors);
     }
 
     public function test1000UpdateHandlersInParallel()
@@ -93,15 +101,16 @@ final class TelegramBotTest extends TestCase
         $counter = 0;
         foreach (range(1, 1000) as $i) {
             $bot->addHandler(function () use (&$counter) {
-                delay(1);
+                delay(1000);
 
                 ++$counter;
             });
         }
 
-        await($bot->handleUpdate(UpdateFactory::make()));
+        [, $errors] = await_all($bot->handleUpdate(UpdateFactory::make()));
 
         $this->assertEquals(1000, $counter);
+        $this->assertSame([], $errors);
     }
 
     public function testExceptionInUpdateHandlerIsCaught()
@@ -144,7 +153,8 @@ final class TelegramBotTest extends TestCase
         $bot->addHandler(function (UpdateInterface $update, TelegramBot $bot) use (&$counter) {
             ++$counter;
 
-            EventLoop::delay(0.01, $bot->stop(...));
+            delay(10);
+            $bot->stop();
         });
 
         $bot->addHandler(fn () => throw new $customException());
@@ -152,5 +162,200 @@ final class TelegramBotTest extends TestCase
         $bot->run();
 
         $this->assertEquals(2, $counter);
+    }
+
+    public function testStopFromHandlerCancelsSlowSiblingAfterGracePeriod(): void
+    {
+        $client = new MockTelegramBotApiClient(0.02, []);
+        $client->addResponse([['update_id' => 437567765]], 'getUpdates');
+
+        $bot = new TelegramBot(
+            token: 'token',
+            api: new Api(client: $client),
+            logger: new NullLogger(),
+        );
+
+        $slowHandlerCompleted = false;
+        $slowHandlerCleanedUp = false;
+
+        $bot->addHandler(static function (UpdateInterface $update, TelegramBot $bot): void {
+            delay(5);
+            $bot->stop(0.01);
+        });
+        $bot->addHandler(static function () use (&$slowHandlerCompleted, &$slowHandlerCleanedUp): void {
+            try {
+                delay(1000);
+                $slowHandlerCompleted = true;
+            } finally {
+                $slowHandlerCleanedUp = true;
+            }
+        });
+
+        $startedAt = hrtime(true);
+        $bot->run();
+        $elapsedMilliseconds = (hrtime(true) - $startedAt) / 1_000_000;
+
+        self::assertFalse($slowHandlerCompleted);
+        self::assertTrue($slowHandlerCleanedUp);
+        self::assertLessThan(250, $elapsedMilliseconds);
+    }
+
+    public function testRuntimeCancellationIsNotSwallowedByPollingRetry(): void
+    {
+        $bot = new TelegramBot(
+            token: 'token',
+            api: new Api(client: new MockTelegramBotApiClient(0.02, [])),
+            logger: new NullLogger(),
+        );
+
+        $run = spawn($bot->run(...));
+        delay(5);
+        $run->cancel();
+
+        [, $errors] = await_all([$run]);
+
+        self::assertInstanceOf(AsyncCancellation::class, $errors[0]);
+        $this->expectException(\LogicException::class);
+        $bot->stop();
+    }
+
+    public function testStopInterruptsActiveLongPoll(): void
+    {
+        $bot = new TelegramBot(
+            token: 'token',
+            api: new Api(client: new MockTelegramBotApiClient(0.3, [])),
+            logger: new NullLogger(),
+        );
+
+        $stopper = spawn(static function () use ($bot): void {
+            delay(10);
+            $bot->stop(0.01);
+        });
+
+        $startedAt = hrtime(true);
+        $bot->run();
+        $elapsedMilliseconds = (hrtime(true) - $startedAt) / 1_000_000;
+        [, $errors] = await_all([$stopper]);
+
+        self::assertSame([], $errors);
+        self::assertLessThan(100, $elapsedMilliseconds);
+    }
+
+    public function testReadyStopBeforePollingCoroutineIsPreserved(): void
+    {
+        $client = new MockTelegramBotApiClient(0.05, []);
+        $bot = new TelegramBot(
+            token: 'token',
+            api: new Api(client: $client),
+            logger: new NullLogger(),
+        );
+
+        $stopper = spawn(static function () use ($bot): void {
+            $bot->stop(0.01);
+        });
+
+        $bot->run();
+        [, $errors] = await_all([$stopper]);
+
+        self::assertSame([], $errors);
+        self::assertSame([], $client->requests);
+    }
+
+    public function testConcurrentStopRequestsAreIdempotent(): void
+    {
+        $client = new MockTelegramBotApiClient(0.01, []);
+        $client->addResponse([['update_id' => 437567765]], 'getUpdates');
+
+        $bot = new TelegramBot(
+            token: 'token',
+            api: new Api(client: $client),
+            logger: new NullLogger(),
+        );
+
+        $errors = [];
+        $bot->errorHandler = static function (\Throwable $error) use (&$errors): void {
+            $errors[] = $error;
+        };
+
+        $stops = 0;
+        $bot->addHandler(static function (UpdateInterface $update, TelegramBot $bot) use (&$stops): void {
+            delay(5);
+            ++$stops;
+            $bot->stop(0.05);
+        });
+        $bot->addHandler(static function (UpdateInterface $update, TelegramBot $bot) use (&$stops): void {
+            delay(6);
+            ++$stops;
+            $bot->stop(0.05);
+        });
+
+        $bot->run();
+
+        self::assertSame(2, $stops);
+        self::assertSame([], $errors);
+    }
+
+    public function testLaterShorterStopTightensActiveGracePeriod(): void
+    {
+        $client = new MockTelegramBotApiClient(0.01, []);
+        $client->addResponse([['update_id' => 437567765]], 'getUpdates');
+
+        $bot = new TelegramBot(
+            token: 'token',
+            api: new Api(client: $client),
+            logger: new NullLogger(),
+        );
+
+        $slowHandlerCompleted = false;
+        $bot->addHandler(static function (UpdateInterface $update, TelegramBot $bot): void {
+            delay(5);
+            $bot->stop(0.2);
+        });
+        $bot->addHandler(static function (UpdateInterface $update, TelegramBot $bot): void {
+            delay(20);
+            $bot->stop(0.01);
+        });
+        $bot->addHandler(static function () use (&$slowHandlerCompleted): void {
+            delay(120);
+            $slowHandlerCompleted = true;
+        });
+
+        $startedAt = hrtime(true);
+        $bot->run();
+        $elapsedMilliseconds = (hrtime(true) - $startedAt) / 1_000_000;
+
+        self::assertFalse($slowHandlerCompleted);
+        self::assertLessThan(80, $elapsedMilliseconds);
+    }
+
+    public function testStopRequestedByStartupLoggerIsPreserved(): void
+    {
+        $client = new MockTelegramBotApiClient(0, []);
+        $bot = new TelegramBot(
+            token: 'token',
+            api: new Api(client: $client),
+            logger: new NullLogger(),
+        );
+
+        $bot->logger = new class($bot) extends AbstractLogger {
+            private bool $stopped = false;
+
+            public function __construct(
+                private readonly TelegramBot $bot,
+            ) {
+            }
+
+            public function log($level, string|\Stringable $message, array $context = []): void
+            {
+                if (!$this->stopped && str_starts_with((string) $message, 'Starting bot')) {
+                    $this->stopped = true;
+                    $this->bot->stop();
+                }
+            }
+        };
+
+        $bot->run();
+
+        self::assertSame([], $client->requests);
     }
 }

@@ -3,25 +3,25 @@
 # Phenogram Framework
 
 [![CI](https://github.com/phenogram/framework/actions/workflows/ci.yaml/badge.svg)](https://github.com/phenogram/framework/actions/workflows/ci.yaml)
-[![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4.svg)](https://www.php.net/releases/8.4/en.php)
+[![PHP 8.6](https://img.shields.io/badge/PHP-8.6-777BB4.svg)](https://www.php.net/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A typed application framework for Telegram bots on PHP 8.4.
+A typed application framework for Telegram bots on True Async PHP 8.6.
 
 Phenogram Framework adds long polling, routes, middleware, concurrent handlers, logging, and file uploads to [Phenogram Bindings](https://github.com/phenogram/bindings).
 
 > [!WARNING]
-> Version 6 is under active development. Evaluate the package before you use it in production.
+> Version 7 and True Async PHP are under active development. Evaluate the package before you use them in production.
 
 ## Compatibility
 
 | Framework | PHP | Bindings | Telegram Bot API model |
 | --- | --- | --- | --- |
-| 6.0.x | `^8.4` | `^7` | 9.6 |
+| 7.0.x-dev | `^8.6` + `ext-true_async:^0.8.2` | `^7` | 9.6 |
 
-Framework 6 requires `phenogram/bindings:^7`. Bindings 7 contains the generated model for Telegram Bot API 9.6. This statement does not claim support for later Bindings major versions or later Telegram Bot API versions.
+Framework 7 requires `phenogram/bindings:^7` and a True Async PHP 8.6 build. Bindings 7 contains the generated model for Telegram Bot API 9.6. This statement does not claim support for later Bindings major versions or later Telegram Bot API versions.
 
-Do not install Bindings 8 or 9 with Framework 6 unless a new Framework release declares that support.
+Do not install Bindings 8 or 9 with Framework 7 unless a new Framework release declares that support.
 
 ## Package scope
 
@@ -29,11 +29,11 @@ Use this package when you need an application layer for a Telegram bot.
 
 The package provides:
 
-- an Amp HTTP client for Telegram Bot API requests;
+- a coroutine-aware cURL client for Telegram Bot API requests;
 - long polling with `getUpdates`;
 - routes and route conditions;
 - middleware and route groups;
-- concurrent update handlers with Amp futures;
+- concurrent update handlers with True Async coroutines;
 - PSR-3 logging;
 - local-file, stream, and buffered-file uploads.
 
@@ -43,7 +43,8 @@ This package does not provide a webhook server, data storage, a queue, or a depl
 
 ## Requirements
 
-- PHP `^8.4` (PHP 8.4 or a later PHP 8 release);
+- True Async PHP `^8.6` with `true_async:^0.8.2`;
+- the PHP `curl` extension;
 - Composer 2;
 - a Telegram bot token for live use.
 
@@ -109,7 +110,7 @@ Keep each `RouteConfigurator` chain in one expression. Do not store an unfinishe
 | Input | Class | Use |
 | --- | --- | --- |
 | Local path | `LocalFile` | Let the HTTP client open a file from a path. |
-| Readable stream | `ReadableStreamFile` | Send data from an Amp readable stream. |
+| Readable stream | `ReadableStreamFile` | Read data from a regular PHP stream resource. |
 | String buffer | `BufferedFile` | Send data that is already in memory. |
 
 For a Telegram file ID or a public URL, pass the string directly to the applicable Bindings API method.
@@ -149,11 +150,11 @@ A handler can accept these parameters:
 1. `UpdateInterface $update`
 2. `TelegramBot $bot`
 
-A handler can also accept fewer parameters. The framework schedules all supported handlers as Amp futures.
+A handler can also accept fewer parameters. The framework schedules all supported handlers as `Async\Coroutine` instances.
 
 ### Process one update
 
-Use `$bot->handleUpdate($update)` when another component supplies the update. The method returns the handler futures. Await the futures when the caller must know that processing is complete.
+Use `$bot->handleUpdate($update)` when another component supplies the update. The method returns the handler coroutines. Use `Async\await_all()` when the caller must know that processing is complete.
 
 This method is useful for tests and for a separate webhook adapter.
 
@@ -190,6 +191,10 @@ composer check
 
 The command validates Composer metadata, checks code style, and runs the offline PHPUnit suite.
 
+PHP-CS-Fixer does not support running on PHP 8.6 yet. The `style` and `fix`
+scripts automatically look for a separate PHP 8.4/8.5 binary; set
+`PHP_CS_FIXER_PHP=/path/to/php` when auto-detection is not enough.
+
 You can also run one check:
 
 ```bash
@@ -205,6 +210,17 @@ The default PHPUnit configuration:
 - does not use Telegram credentials;
 - does not make network requests;
 - excludes `tests/Integration`.
+
+### Benchmark
+
+Run the concurrent-handler benchmark:
+
+```bash
+composer benchmark
+```
+
+The methodology, comparison with the original Amp/Revolt implementation, and
+raw results are in [`benchmarks/README.md`](benchmarks/README.md).
 
 ## Live integration tests
 

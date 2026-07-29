@@ -6,7 +6,7 @@ use Phenogram\Bindings\ClientInterface;
 use Phenogram\Bindings\Types\Interfaces\ResponseInterface;
 use Phenogram\Bindings\Types\Response;
 
-use function Amp\delay;
+use function Async\delay;
 
 class MockTelegramBotApiClient implements ClientInterface
 {
@@ -59,7 +59,7 @@ class MockTelegramBotApiClient implements ClientInterface
             'data' => $data,
         ];
 
-        delay($this->responseTimeout);
+        delay(max(0, (int) ceil($this->responseTimeout * 1000)));
 
         return new Response(
             ok: true,

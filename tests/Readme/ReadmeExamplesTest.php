@@ -17,7 +17,7 @@ use Phenogram\Framework\Type\ReadableStreamFile;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
-use function Amp\Future\await;
+use function Async\await_all;
 use function Phenogram\Framework\Examples\addPingRoute;
 use function Phenogram\Framework\Examples\createEchoBot;
 use function Phenogram\Framework\Examples\sendExampleFiles;
@@ -39,12 +39,13 @@ final class ReadmeExamplesTest extends TestCase
             logger: new NullLogger(),
         );
 
-        await($bot->handleUpdate($this->textUpdate(userId: 7, text: 'Hello')));
+        [, $errors] = await_all($bot->handleUpdate($this->textUpdate(userId: 7, text: 'Hello')));
 
         self::assertCount(1, $client->requests);
         self::assertSame('sendMessage', $client->requests[0]['method']);
         self::assertSame(1001, $client->requests[0]['data']['chat_id']);
         self::assertSame('Hello', $client->requests[0]['data']['text']);
+        self::assertSame([], $errors);
     }
 
     public function testRouteGroupExampleWithoutNetwork(): void
@@ -59,11 +60,13 @@ final class ReadmeExamplesTest extends TestCase
         );
         addPingRoute($bot, allowedUserId: 7);
 
-        await($bot->handleUpdate($this->textUpdate(userId: 8, text: '/ping')));
-        await($bot->handleUpdate($this->textUpdate(userId: 7, text: '/ping')));
+        [, $ignoredErrors] = await_all($bot->handleUpdate($this->textUpdate(userId: 8, text: '/ping')));
+        [, $acceptedErrors] = await_all($bot->handleUpdate($this->textUpdate(userId: 7, text: '/ping')));
 
         self::assertCount(1, $client->requests);
         self::assertSame('pong', $client->requests[0]['data']['text']);
+        self::assertSame([], $ignoredErrors);
+        self::assertSame([], $acceptedErrors);
     }
 
     public function testFileExamplesWithoutNetwork(): void

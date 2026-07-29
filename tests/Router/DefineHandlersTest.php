@@ -13,7 +13,7 @@ use Phenogram\Framework\Router\Router;
 use Phenogram\Framework\TelegramBot;
 use PHPUnit\Framework\TestCase;
 
-use function Amp\Future\await;
+use function Async\await_all;
 
 class DefineHandlersTest extends TestCase
 {
@@ -128,9 +128,10 @@ class DefineHandlersTest extends TestCase
             $group->add()->handler(fn (UpdateInterface $update, TelegramBot $bot) => $counter->count++);
         });
 
-        await($bot->handleUpdate(UpdateFactory::make()));
+        [, $errors] = await_all($bot->handleUpdate(UpdateFactory::make()));
 
         $this->assertEquals(4, $counter->count);
+        $this->assertSame([], $errors);
     }
 
     public function testReadmeExample(): void
@@ -142,8 +143,9 @@ class DefineHandlersTest extends TestCase
         ))
             ->supports(fn (UpdateInterface $update) => $update->message?->text !== null);
 
-        await($bot->handleUpdate(UpdateFactory::make()));
+        [, $errors] = await_all($bot->handleUpdate(UpdateFactory::make()));
 
         self::assertTrue(true);
+        self::assertSame([], $errors);
     }
 }

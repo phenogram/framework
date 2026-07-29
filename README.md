@@ -3,25 +3,25 @@
 # Phenogram Framework
 
 [![CI](https://github.com/phenogram/framework/actions/workflows/ci.yaml/badge.svg)](https://github.com/phenogram/framework/actions/workflows/ci.yaml)
-[![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4.svg)](https://www.php.net/releases/8.4/en.php)
+[![PHP 8.6](https://img.shields.io/badge/PHP-8.6-777BB4.svg)](https://www.php.net/)
 [![Лицензия: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Типизированный прикладной фреймворк для Telegram-ботов на PHP 8.4.
+Типизированный прикладной фреймворк для Telegram-ботов на True Async PHP 8.6.
 
 Phenogram Framework добавляет long polling, маршруты, middleware, параллельные обработчики, журналирование и загрузку файлов к пакету [Phenogram Bindings](https://github.com/phenogram/bindings).
 
 > [!WARNING]
-> Версия 6 находится в активной разработке. Оцените пакет перед использованием в production.
+> Версия 7 и True Async PHP находятся в активной разработке. Оцените пакет перед использованием в production.
 
 ## Совместимость
 
 | Framework | PHP | Bindings | Модель Telegram Bot API |
 | --- | --- | --- | --- |
-| 6.0.x | `^8.4` | `^7` | 9.6 |
+| 7.0.x-dev | `^8.6` + `ext-true_async:^0.8.2` | `^7` | 9.6 |
 
-Framework 6 требует `phenogram/bindings:^7`. Bindings 7 содержит сгенерированную модель Telegram Bot API 9.6. Это утверждение не означает поддержку более новых основных версий Bindings или более новых версий Telegram Bot API.
+Framework 7 требует `phenogram/bindings:^7` и сборку PHP 8.6 с True Async. Bindings 7 содержит сгенерированную модель Telegram Bot API 9.6. Это утверждение не означает поддержку более новых основных версий Bindings или более новых версий Telegram Bot API.
 
-Не устанавливайте Bindings 8 или 9 вместе с Framework 6, пока новый выпуск Framework явно не объявит такую поддержку.
+Не устанавливайте Bindings 8 или 9 вместе с Framework 7, пока новый выпуск Framework явно не объявит такую поддержку.
 
 ## Назначение пакета
 
@@ -29,11 +29,11 @@ Framework 6 требует `phenogram/bindings:^7`. Bindings 7 содержит 
 
 Пакет предоставляет:
 
-- HTTP-клиент на Amp для запросов к Telegram Bot API;
+- HTTP-клиент на coroutine-aware cURL для запросов к Telegram Bot API;
 - long polling через `getUpdates`;
 - маршруты и условия маршрутов;
 - middleware и группы маршрутов;
-- параллельные обработчики обновлений на Amp futures;
+- параллельные обработчики обновлений на True Async coroutines;
 - журналирование через PSR-3;
 - загрузку локальных файлов, потоков и файлов из памяти.
 
@@ -43,7 +43,8 @@ Framework 6 требует `phenogram/bindings:^7`. Bindings 7 содержит 
 
 ## Требования
 
-- PHP `^8.4` (PHP 8.4 или более новый выпуск PHP 8);
+- True Async PHP `^8.6` с расширением `true_async:^0.8.2`;
+- расширение PHP `curl`;
 - Composer 2;
 - токен Telegram-бота для работы с Telegram.
 
@@ -109,7 +110,7 @@ php examples/echo-bot.php
 | Входные данные | Класс | Назначение |
 | --- | --- | --- |
 | Локальный путь | `LocalFile` | HTTP-клиент открывает файл по указанному пути. |
-| Читаемый поток | `ReadableStreamFile` | Клиент отправляет данные из читаемого потока Amp. |
+| Читаемый поток | `ReadableStreamFile` | Клиент читает данные из обычного потокового ресурса PHP. |
 | Строка в памяти | `BufferedFile` | Клиент отправляет уже загруженные в память данные. |
 
 Передайте строку напрямую в соответствующий метод Bindings API, если у вас есть Telegram file ID или публичный URL.
@@ -149,11 +150,11 @@ php examples/send-files.php
 1. `UpdateInterface $update`
 2. `TelegramBot $bot`
 
-Обработчик также может принимать меньше параметров. Фреймворк запускает все подходящие обработчики как Amp futures.
+Обработчик также может принимать меньше параметров. Фреймворк запускает все подходящие обработчики как `Async\Coroutine`.
 
 ### Обработка одного обновления
 
-Используйте `$bot->handleUpdate($update)`, если обновление передаёт другой компонент. Метод возвращает futures обработчиков. Дождитесь их завершения, если вызывающему коду нужен результат обработки.
+Используйте `$bot->handleUpdate($update)`, если обновление передаёт другой компонент. Метод возвращает coroutines обработчиков. Используйте `Async\await_all()`, если вызывающему коду нужно дождаться завершения обработки.
 
 Этот метод подходит для тестов и отдельного webhook-адаптера.
 
@@ -190,6 +191,10 @@ composer check
 
 Команда проверяет метаданные Composer, стиль кода и запускает офлайн-набор PHPUnit.
 
+PHP-CS-Fixer пока не поддерживает запуск на PHP 8.6. Скрипты `style` и `fix`
+автоматически ищут отдельный PHP 8.4/8.5; при необходимости укажите его через
+`PHP_CS_FIXER_PHP=/path/to/php`.
+
 Можно запустить одну проверку:
 
 ```bash
@@ -205,6 +210,17 @@ composer fix
 - не использует учётные данные Telegram;
 - не делает сетевые запросы;
 - исключает `tests/Integration`.
+
+### Benchmark
+
+Запустите benchmark параллельных обработчиков:
+
+```bash
+composer benchmark
+```
+
+Методика, сравнение с исходной реализацией Amp/Revolt и сырые результаты
+находятся в [`benchmarks/README.md`](benchmarks/README.md).
 
 ## Интеграционные тесты с Telegram
 

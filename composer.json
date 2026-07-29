@@ -1,8 +1,8 @@
 {
     "name": "phenogram/framework",
-    "description": "Async, strictly typed Telegram bot framework for PHP 8.4",
+    "description": "True Async, strictly typed Telegram bot framework for PHP 8.6",
     "type": "library",
-    "version": "6.0.3",
+    "version": "7.0.0-dev",
     "license": "MIT",
     "keywords": [
         "async",
@@ -37,15 +37,13 @@
         }
     ],
     "require": {
-        "php": "^8.4",
+        "php": "^8.6",
+        "ext-curl": "*",
+        "ext-true_async": "^0.8.2",
         "psr/log": "^3.0",
         "psr-discovery/log-implementations": "^1.0",
-        "psr/http-factory": "^1.0",
         "psr/container": "^2.0",
-        "phenogram/bindings": "^7",
-        "amphp/amp": "^3.0",
-        "amphp/http-client": "^5.1",
-        "amphp/file": "^3.1"
+        "phenogram/bindings": "^7"
     },
     "require-dev": {
         "symfony/var-dumper": "^7",
@@ -67,9 +65,10 @@
         "test:offline": "php -d error_reporting=E_ALL ./vendor/bin/phpunit --configuration phpunit.xml --fail-on-warning --fail-on-deprecation",
         "test:examples": "php -d error_reporting=E_ALL ./vendor/bin/phpunit --configuration phpunit.xml --filter ReadmeExamplesTest --fail-on-warning --fail-on-deprecation",
         "test:integration": "php -d error_reporting=E_ALL ./vendor/bin/phpunit --configuration phpunit.integration.xml",
-        "style": "./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.php --allow-risky=yes",
+        "benchmark": "@php -n -d opcache.enable_cli=0 benchmarks/handler-fanout.php",
+        "style": "./tools/php-cs-fixer/run fix --dry-run --diff --config=.php-cs-fixer.php --allow-risky=yes --sequential",
         "fix": [
-            "./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix -vvv --config=.php-cs-fixer.php --allow-risky=yes"
+            "./tools/php-cs-fixer/run fix -vvv --config=.php-cs-fixer.php --allow-risky=yes --sequential"
         ],
         "tools:install": "@composer install --working-dir=tools/php-cs-fixer --no-interaction --prefer-dist"
     }

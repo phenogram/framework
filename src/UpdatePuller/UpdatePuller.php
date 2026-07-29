@@ -4,27 +4,37 @@ declare(strict_types=1);
 
 namespace Phenogram\Framework\UpdatePuller;
 
-use Amp\Future;
-use Amp\TimeoutCancellation;
+use Async\AsyncCancellation;
+use Async\Coroutine;
+use Async\OperationCanceledException;
+use Async\Scope;
 use Phenogram\Bindings\Types\Interfaces\UpdateInterface;
 use Phenogram\Bindings\Types\UpdateType;
 use Phenogram\Framework\Exception\PhenogramException;
 use Phenogram\Framework\Exception\UpdatePullingException;
 use Phenogram\Framework\TelegramBot;
-use Revolt\EventLoop;
 
-use function Amp\async;
-use function Amp\delay;
-use function Amp\Future\awaitAll;
+use function Async\current_coroutine;
+use function Async\delay;
+use function Async\protect;
+use function Async\timeout;
 
 class UpdatePuller
 {
     private BotStatus $status = BotStatus::stopped;
 
     /**
-     * @var array<Future>
+     * @var array<int, Coroutine>
      */
     private array $tasks = [];
+
+    private ?Scope $updatesScope = null;
+
+    private ?Coroutine $pollingCoroutine = null;
+
+    private float $stopTimeout = 5.0;
+
+    private ?float $stopDeadlineMilliseconds = null;
 
     public function __construct(
         private TelegramBot $bot,
@@ -44,59 +54,137 @@ class UpdatePuller
         $offset = $offset ?? 1;
         $timeout = $timeout ?? 15;
 
-        $this->status = BotStatus::starting;
+        if ($this->status !== BotStatus::stopping) {
+            $this->status = BotStatus::started;
+        }
 
-        $this->bot->logger->info(sprintf(
-            'Starting bot with offset %d, limit %d, timeout %d',
-            $offset,
-            $limit,
-            $timeout,
-        ));
+        $this->pollingCoroutine = current_coroutine();
 
-        foreach ($this->pullUpdates($offset, $limit, $timeout, $allowedUpdates) as $update) {
-            $this->tasks[$update->updateId] = async(function () use ($update) {
-                [$exceptions] = awaitAll($this->bot->handleUpdate($update));
+        try {
+            $this->bot->logger->info(sprintf(
+                'Starting bot with offset %d, limit %d, timeout %d',
+                $offset,
+                $limit,
+                $timeout,
+            ));
 
-                /** @var \Throwable $exception */
-                foreach ($exceptions as $exception) {
-                    ($this->bot->errorHandler)(new PhenogramException(
-                        message: sprintf('Error while handling update: %s', $exception->getMessage()),
-                        previous: $exception,
-                    ), $this->bot);
+            if ($this->status === BotStatus::started) {
+                $this->updatesScope = Scope::inherit()->asNotSafely();
+                $this->updatesScope->setExceptionHandler(
+                    function (Scope $scope, Coroutine $task, \Throwable $exception): void {
+                        if (!$exception instanceof AsyncCancellation) {
+                            $this->reportUpdateError($exception);
+                        }
+                    },
+                );
+
+                foreach ($this->pullUpdates($offset, $limit, $timeout, $allowedUpdates) as $update) {
+                    foreach ($this->bot->handleUpdate($update, $this->updatesScope) as $task) {
+                        $taskId = $task->getId();
+                        $this->tasks[$taskId] = $task;
+                        $task->finally(function () use ($taskId): void {
+                            unset($this->tasks[$taskId]);
+                        });
+                    }
                 }
-
-                unset($this->tasks[$update->updateId]);
-            });
+            }
+        } catch (AsyncCancellation $exception) {
+            if ($this->status !== BotStatus::stopping) {
+                throw $exception;
+            }
+        } finally {
+            try {
+                protect(function (): void {
+                    $this->drainUpdates();
+                });
+            } finally {
+                $this->pollingCoroutine = null;
+                $this->stopDeadlineMilliseconds = null;
+                $this->status = BotStatus::stopped;
+            }
         }
     }
 
     public function stop(float $timeout = 5.0): void
     {
-        assert($timeout > 0);
+        if (!is_finite($timeout) || $timeout <= 0 || $timeout > PHP_INT_MAX / 1000) {
+            throw new \ValueError('The stop timeout must be greater than zero');
+        }
+
+        $deadline = $this->monotonicMilliseconds() + ($timeout * 1000);
+
+        if ($this->status === BotStatus::stopping) {
+            $this->stopTimeout = min($this->stopTimeout, $timeout);
+            $this->stopDeadlineMilliseconds = min(
+                $this->stopDeadlineMilliseconds ?? $deadline,
+                $deadline,
+            );
+
+            return;
+        }
+
+        $this->stopTimeout = $timeout;
+        $this->stopDeadlineMilliseconds = $deadline;
+        $this->status = BotStatus::stopping;
 
         $this->bot->logger->info('Stopping bot');
 
-        $this->status = BotStatus::stopping;
+        $currentCoroutine = current_coroutine();
+        if (
+            $this->pollingCoroutine !== null
+            && $this->pollingCoroutine->getId() !== $currentCoroutine->getId()
+            && !$this->pollingCoroutine->isCompleted()
+        ) {
+            $this->pollingCoroutine->cancel(new AsyncCancellation('Phenogram stop requested'));
+        }
+    }
 
-        if ($timeout !== 0.0) {
-            $this->bot->logger->info(
-                "Waiting for all the request to complete for a maximum of $timeout seconds, then terminating."
-            );
+    private function drainUpdates(): void
+    {
+        if ($this->updatesScope === null) {
+            return;
         }
 
-        $timeoutTimer = new TimeoutCancellation($timeout);
+        $this->bot->logger->info(
+            "Waiting for all requests to complete for a maximum of {$this->stopTimeout} seconds, then cancelling them."
+        );
 
-        [$exceptions] = awaitAll($this->tasks, $timeoutTimer);
+        $completed = false;
+        while (($remainingMilliseconds = $this->remainingStopMilliseconds()) > 0) {
+            try {
+                $this->updatesScope->awaitCompletion(
+                    timeout(min(10, $remainingMilliseconds)),
+                );
+                $completed = true;
 
-        /** @var \Throwable $exception */
-        foreach ($exceptions as $exception) {
-            ($this->bot->errorHandler)(new PhenogramException(
-                message: sprintf('Error while stopping bot: %s', $exception->getMessage()),
-                previous: $exception,
-            ), $this->bot);
+                break;
+            } catch (OperationCanceledException) {
+            }
         }
 
-        $this->status = BotStatus::stopped;
+        if (!$completed) {
+            $this->updatesScope->cancel(new AsyncCancellation('Phenogram stop timeout'));
+
+            try {
+                $this->updatesScope->awaitAfterCancellation(
+                    function (\Throwable $exception, Scope $scope): void {
+                        if (!$exception instanceof AsyncCancellation) {
+                            $this->reportUpdateError($exception);
+                        }
+                    },
+                    timeout($this->secondsToMilliseconds($this->stopTimeout)),
+                );
+            } catch (OperationCanceledException $exception) {
+                $this->bot->logger->error(
+                    'Timed out while cancelling update handlers',
+                    ['exception' => $exception],
+                );
+            }
+        }
+
+        $this->updatesScope->dispose();
+        $this->updatesScope = null;
+        $this->tasks = [];
     }
 
     /**
@@ -110,25 +198,12 @@ class UpdatePuller
         int $timeout,
         ?array $allowedUpdates,
     ): \Generator {
-        $this->status = BotStatus::started;
-
         if ($allowedUpdates !== null) {
             $allowedUpdates = array_map(
                 fn (UpdateType $type) => $type->value,
                 $allowedUpdates
             );
         }
-
-        $oldErrorHandler = EventLoop::getErrorHandler();
-        $errorHandler = function (\Throwable $e) use ($oldErrorHandler) {
-            try {
-                ($this->bot->errorHandler)($e, $this->bot);
-            } catch (\Throwable $e) {
-                $oldErrorHandler && ($oldErrorHandler)($e);
-            }
-        };
-
-        EventLoop::setErrorHandler($errorHandler);
 
         while ($this->status === BotStatus::started) {
             $this->bot->logger->debug('Polling updates', [
@@ -145,7 +220,13 @@ class UpdatePuller
                     timeout: $timeout,
                     allowedUpdates: $allowedUpdates,
                 );
+            } catch (AsyncCancellation $exception) {
+                throw $exception;
             } catch (\Throwable $e) {
+                if ($this->status !== BotStatus::started) {
+                    break;
+                }
+
                 $message = "Error while pooling updates: '{$e->getMessage()}'.";
 
                 if ($this->poolingErrorTimeout !== 0.0) {
@@ -158,17 +239,14 @@ class UpdatePuller
                 ), $this->bot);
 
                 if ($this->poolingErrorTimeout !== 0.0) {
-                    try {
-                        // 🥴 при резком исчезновении интернета на этом месте в лупе возникает ошибка
-                        // "Stream watcher invoked after stream closed" (Http2ConnectionProcessor.php:1588)
-                        // Может я не правильно использую что-то, но пока так
-                        delay($this->poolingErrorTimeout);
-                    } catch (\Throwable) {
-                        delay($this->poolingErrorTimeout);
-                    }
+                    delay($this->secondsToMilliseconds($this->poolingErrorTimeout));
                 }
 
                 continue;
+            }
+
+            if ($this->status !== BotStatus::started) {
+                break;
             }
 
             $this->bot->logger->debug('Got updates', [
@@ -185,7 +263,40 @@ class UpdatePuller
                 yield $update;
             }
         }
+    }
 
-        EventLoop::setErrorHandler($oldErrorHandler);
+    private function reportUpdateError(\Throwable $exception): void
+    {
+        try {
+            ($this->bot->errorHandler)(new PhenogramException(
+                message: sprintf('Error while handling update: %s', $exception->getMessage()),
+                previous: $exception,
+            ), $this->bot);
+        } catch (\Throwable $handlerException) {
+            $this->bot->logger->error(
+                'The bot error handler failed',
+                ['exception' => $handlerException],
+            );
+        }
+    }
+
+    private function secondsToMilliseconds(float $seconds): int
+    {
+        return max(1, (int) ceil($seconds * 1000));
+    }
+
+    private function remainingStopMilliseconds(): int
+    {
+        $this->stopDeadlineMilliseconds ??= $this->monotonicMilliseconds() + ($this->stopTimeout * 1000);
+
+        return max(
+            0,
+            (int) ceil($this->stopDeadlineMilliseconds - $this->monotonicMilliseconds()),
+        );
+    }
+
+    private function monotonicMilliseconds(): float
+    {
+        return hrtime(true) / 1_000_000;
     }
 }
