@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3b1d848e5c211d7b4a1833e000e5b50e",
+    "content-hash": "55f2bb9b84ee91877c5cbc1f981a5062",
     "packages": [
         {
             "name": "composer/semver",
@@ -2891,6 +2891,41 @@
                 }
             ],
             "time": "2025-11-17T20:03:58+00:00"
+        },
+        {
+            "name": "true-async/ide-helper",
+            "version": "v0.8.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/true-async/ide-helper.git",
+                "reference": "4a19b32e98e6eea640227e42665db7bc37a91f7c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/true-async/ide-helper/zipball/4a19b32e98e6eea640227e42665db7bc37a91f7c",
+                "reference": "4a19b32e98e6eea640227e42665db7bc37a91f7c",
+                "shasum": ""
+            },
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "IDE helper / stubs for the TrueAsync ecosystem: the async extension, the HTTP server, and the ClickHouse client",
+            "keywords": [
+                "async",
+                "clickhouse",
+                "coroutine",
+                "http-server",
+                "ide-helper",
+                "stubs",
+                "true-async"
+            ],
+            "support": {
+                "issues": "https://github.com/true-async/ide-helper/issues",
+                "source": "https://github.com/true-async/ide-helper/tree/v0.8.0"
+            },
+            "time": "2026-07-15T10:48:34+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
