@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "55f2bb9b84ee91877c5cbc1f981a5062",
+    "content-hash": "60a1a6661c4764de14bab3eaf8d40552",
     "packages": [
         {
             "name": "composer/semver",
@@ -85,16 +85,16 @@
         },
         {
             "name": "phenogram/bindings",
-            "version": "9.0.1",
+            "version": "9.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phenogram/bindings.git",
-                "reference": "f2a08e5835181afd9fa0baab468d966039d6e335"
+                "reference": "4d8255c0e91153d745b1a671f4c35c8e540204d4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phenogram/bindings/zipball/f2a08e5835181afd9fa0baab468d966039d6e335",
-                "reference": "f2a08e5835181afd9fa0baab468d966039d6e335",
+                "url": "https://api.github.com/repos/phenogram/bindings/zipball/4d8255c0e91153d745b1a671f4c35c8e540204d4",
+                "reference": "4d8255c0e91153d745b1a671f4c35c8e540204d4",
                 "shasum": ""
             },
             "require": {
@@ -143,7 +143,7 @@
                 "issues": "https://github.com/phenogram/bindings/issues",
                 "source": "https://github.com/phenogram/bindings"
             },
-            "time": "2026-07-20T12:15:06+00:00"
+            "time": "2026-08-06T06:13:52+00:00"
         },
         {
             "name": "psr-discovery/discovery",
