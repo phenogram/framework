@@ -39,7 +39,7 @@
     "require": {
         "php": "^8.6",
         "ext-curl": "*",
-        "ext-true_async": "^0.8.2",
+        "ext-true_async": "^0.8.2 || ^0.11.7",
         "psr/log": "^3.0",
         "psr-discovery/log-implementations": "^1.0",
         "psr/container": "^2.0",
